@@ -15,13 +15,15 @@ class MCPClient:
             response.raise_for_status()
             return response.json().get("repos", [])
         except requests.RequestException as e:
+            status_code = 502
             detail = "MCP Service Error"
             if hasattr(e, 'response') and e.response:
+                status_code = e.response.status_code
                 try:
                     detail = e.response.json().get("error", detail)
                 except:
                     pass
-            raise HTTPException(status_code=502, detail=f"Failed to fetch repos from MCP: {detail}")
+            raise HTTPException(status_code=status_code, detail=f"Failed to fetch repos from MCP: {detail}")
 
     def get_pr_diff(self, provider: str, token: str, repo_full_name: str, pr_number: str):
         try:
@@ -30,7 +32,15 @@ class MCPClient:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise HTTPException(status_code=502, detail=f"Failed to fetch diff from MCP: {e}")
+            status_code = 502
+            detail = f"Failed to fetch diff from MCP: {e}"
+            if hasattr(e, 'response') and e.response:
+                status_code = e.response.status_code
+                try:
+                    detail = e.response.json().get("error", detail)
+                except:
+                    pass
+            raise HTTPException(status_code=status_code, detail=detail)
 
     def create_comment(self, provider: str, token: str, repo_full_name: str, pr_number: str, body: str):
         print(f"[API] Calling MCP to create comment for {repo_full_name} PR #{pr_number}")
@@ -44,7 +54,15 @@ class MCPClient:
             return response.json()
         except requests.RequestException as e:
             print(f"[API] MCP Error: {e}")
-            raise HTTPException(status_code=502, detail=f"Failed to create comment via MCP: {e}")
+            status_code = 502
+            detail = f"Failed to create comment via MCP: {e}"
+            if hasattr(e, 'response') and e.response:
+                status_code = e.response.status_code
+                try:
+                    detail = e.response.json().get("error", detail)
+                except:
+                    pass
+            raise HTTPException(status_code=status_code, detail=detail)
 
     def create_review(self, provider: str, token: str, repo_full_name: str, pr_number: str, comments: list, body: str = None):
         print(f"[API] Calling MCP to create PR Review for {repo_full_name} PR #{pr_number}")
@@ -64,6 +82,14 @@ class MCPClient:
             return response.json()
         except requests.RequestException as e:
             print(f"[API] MCP Error: {e}")
-            raise HTTPException(status_code=502, detail=f"Failed to create PR review via MCP: {e}")
+            status_code = 502
+            detail = f"Failed to create PR review via MCP: {e}"
+            if hasattr(e, 'response') and e.response:
+                status_code = e.response.status_code
+                try:
+                    detail = e.response.json().get("error", detail)
+                except:
+                    pass
+            raise HTTPException(status_code=status_code, detail=detail)
 
 mcp_client = MCPClient()

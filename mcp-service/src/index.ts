@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import * as github from './github';
+import * as bitbucket from './bitbucket';
 
 const app = express();
 const port = 8000;
@@ -23,6 +24,9 @@ app.post('/providers/:provider/repos/list', async (req: Request, res: Response) 
         if (provider === 'github') {
             const repos = await github.listRepos(token);
             res.json({ repos });
+        } else if (provider === 'bitbucket') {
+            const repos = await bitbucket.listRepos(token);
+            res.json({ repos });
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
         }
@@ -39,6 +43,9 @@ app.post('/providers/:provider/prs/diff', async (req: Request, res: Response) =>
     try {
         if (provider === 'github') {
             const result = await github.getPrDiff(token, repo_full_name, pr_number);
+            res.json(result);
+        } else if (provider === 'bitbucket') {
+            const result = await bitbucket.getPrDiff(token, repo_full_name, pr_number);
             res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
@@ -57,6 +64,9 @@ app.post('/providers/:provider/prs/comment', async (req: Request, res: Response)
         if (provider === 'github') {
             const result = await github.createComment(token, repo_full_name, pr_number, body);
             res.json(result);
+        } else if (provider === 'bitbucket') {
+            const result = await bitbucket.createComment(token, repo_full_name, pr_number, body);
+            res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
         }
@@ -73,6 +83,9 @@ app.post('/providers/:provider/prs/reviews', async (req: Request, res: Response)
     try {
         if (provider === 'github') {
             const result = await github.createPRReview(token, repo_full_name, pr_number, comments, body);
+            res.json(result);
+        } else if (provider === 'bitbucket') {
+            const result = await bitbucket.createPRReview(token, repo_full_name, pr_number, comments, body);
             res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
