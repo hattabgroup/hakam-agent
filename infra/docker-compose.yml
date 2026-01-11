@@ -1,0 +1,113 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: hakam-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-hakam_db}
+      MYSQL_USER: ${MYSQL_USER:-hakam_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-hakam_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - hakam_db_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ../auth-service
+    container_name: hakam-auth
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-hakam_user}:${MYSQL_PASSWORD:-hakam_password}@${MYSQL_HOST:-db}/${MYSQL_DATABASE:-hakam_db}
+      JWT_SECRET: ${JWT_SECRET:-supersecretkeyForPhase2DevelopmentOnly}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-service:
+    build: ../api-service
+    container_name: hakam-api
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-hakam_user}:${MYSQL_PASSWORD:-hakam_password}@${MYSQL_HOST:-db}/${MYSQL_DATABASE:-hakam_db}
+      JWT_SECRET: ${JWT_SECRET:-supersecretkeyForPhase2DevelopmentOnly}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8000}
+      MCP_SERVICE_URL: ${MCP_SERVICE_URL:-http://mcp-service:8000}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
+      INTERNAL_WORKER_SECRET: ${INTERNAL_WORKER_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: hakam-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8002
+      API_URL: http://api-service:8000
+      AUTH_SERVICE_URL: http://auth-service:8000
+    volumes:
+      - ../frontend/src:/app/src
+      - ../frontend/public:/app/public
+      - ../frontend/package.json:/app/package.json
+      - ../frontend/tsconfig.json:/app/tsconfig.json
+      - ../frontend/next.config.ts:/app/next.config.ts
+    command: npm run dev
+    depends_on:
+      - api-service
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  agent-service:
+    build: ../agent-service
+    container_name: hakam-agent
+    environment:
+      API_URL: ${API_SERVICE_URL:-http://api-service:8000}
+      INTERNAL_WORKER_SECRET: ${INTERNAL_WORKER_SECRET}
+    depends_on:
+      api-service:
+        condition: service_healthy
+
+  mcp-service:
+    build: ../mcp-service
+    container_name: hakam-mcp
+    ports:
+      - "8003:8000"
+    environment:
+      AGENT_URL: http://agent-service:8000
+    depends_on:
+      - agent-service
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hakam_db_data:

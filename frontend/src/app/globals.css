@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    --brand-primary: #6366f1;
+    --brand-secondary: #a855f7;
+    --bg-main: #0a0a0c;
+    --bg-card: #151518;
+    --fg-main: #f8fafc;
+    --fg-muted: #94a3b8;
+    --border: #27272a;
+    --glass-bg: rgba(21, 21, 24, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 12px;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--bg-main)] text-[var(--fg-main)] antialiased;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-secondary)];
+  }
+
+  .btn-premium {
+    @apply relative inline-flex items-center justify-center px-8 py-3 font-semibold text-white transition-all duration-300 rounded-full bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-secondary)] hover:scale-[1.03] hover:shadow-2xl hover:shadow-indigo-500/40 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-8 py-3 font-semibold transition-all duration-300 border rounded-full border-[var(--border)] hover:bg-white/5 active:scale-95;
+  }
+}
