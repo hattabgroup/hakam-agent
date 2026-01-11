@@ -120,14 +120,16 @@ export default function ReviewsPage() {
     };
 
     const getStatusBadge = (status: string) => {
-        switch (status) {
-            case "QUEUED":
+        const s = status.toLowerCase();
+        switch (s) {
+            case "queued":
                 return <span className="px-2.5 py-0.5 rounded-full bg-zinc-500/10 text-zinc-400 text-[10px] font-black border border-zinc-500/20 uppercase tracking-wider">Queued</span>;
-            case "RUNNING":
+            case "running":
                 return <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black border border-blue-500/20 uppercase tracking-wider animate-pulse">Running</span>;
-            case "COMPLETED":
+            case "completed":
+            case "done":
                 return <span className="px-2.5 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] font-black border border-green-500/20 uppercase tracking-wider">Completed</span>;
-            case "FAILED":
+            case "failed":
                 return <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] font-black border border-red-500/20 uppercase tracking-wider">Failed</span>;
             default:
                 return <span className="px-2.5 py-0.5 rounded-full bg-zinc-500/10 text-zinc-400 text-[10px] font-black border border-zinc-500/20 uppercase tracking-wider">{status}</span>;
@@ -179,9 +181,9 @@ export default function ReviewsPage() {
                             href={`/dashboard/reviews/${review.id}`}
                             className="glass p-8 rounded-[32px] border-white/5 bg-white/5 hover:bg-white/[0.08] transition-all duration-300 group relative overflow-hidden flex flex-col h-full"
                         >
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                            <div className="flex justify-between items-start mb-6 gap-4">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 flex-shrink-0">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36.5-8 3C6.77 2.16 5.14 1.16 3 1.5 3 4 5 7 5 7c-1.23.97-1.92 2.52-1.92 4.19-.07 1.51.5 2.97 1.56 3.99C4.19 19.38 4.29 20.35 4.3 22" /></svg>
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -191,7 +193,9 @@ export default function ReviewsPage() {
                                         <p className="text-zinc-500 text-xs">PR #{review.pull_request.pr_external_id}</p>
                                     </div>
                                 </div>
-                                {getStatusBadge(review.status)}
+                                <div className="flex-shrink-0">
+                                    {getStatusBadge(review.status)}
+                                </div>
                             </div>
 
                             <div className="flex-1">
