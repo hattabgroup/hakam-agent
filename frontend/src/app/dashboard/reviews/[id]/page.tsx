@@ -79,7 +79,7 @@ export default function ReviewDetailsPage() {
         }
     }, [user, id]);
 
-    const handlePublish = async () => {
+    const publishReview = async (dryRun = false) => {
         if (!review || isPublishing) return;
 
         setIsPublishing(true);
@@ -87,7 +87,7 @@ export default function ReviewDetailsPage() {
             const response = await fetch(`/api/reviews/${review.id}/publish`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ dry_run: false })
+                body: JSON.stringify({ dry_run: dryRun })
             });
 
             if (response.ok) {
@@ -102,6 +102,36 @@ export default function ReviewDetailsPage() {
             console.error("Publish error:", error);
             alert("An error occurred while publishing.");
         } finally {
+            setIsPublishing(false);
+        }
+    };
+
+    const retryReview = async () => {
+        if (!review) return;
+        setIsPublishing(true); // Reuse state
+        try {
+            // Create a new review run for the same PR
+            const response = await fetch("/api/reviews/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    repo_id: review.pull_request.repository.id,
+                    pr_number: review.pull_request.pr_external_id
+                })
+            });
+
+            if (response.ok) {
+                const newReview = await response.json();
+                // Redirect to the new review
+                router.push(`/dashboard/reviews/${newReview.id}`);
+            } else {
+                const error = await response.json();
+                alert(`Failed to retry review: ${error.detail || "Unknown error"}`);
+                setIsPublishing(false);
+            }
+        } catch (err) {
+            console.error("Failed to retry review:", err);
+            alert("Failed to retry review. Please try again.");
             setIsPublishing(false);
         }
     };
@@ -183,16 +213,41 @@ export default function ReviewDetailsPage() {
                         {review.status}
                     </div>
 
-                    {review.status === 'done' && !review.published_at && (
+                    {review.status === 'failed' && (
                         <button
-                            onClick={handlePublish}
+                            onClick={retryReview}
                             disabled={isPublishing}
+                            className="btn-secondary px-6 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isPublishing ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    Retrying...
+                                </>
+                            ) : (
+                                <>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
+                                    Retry Review
+                                </>
+                            )}
+                        </button>
+                    )}
+
+                    {review.status === 'done' && (
+                        <button
+                            onClick={() => publishReview(false)}
+                            disabled={isPublishing || !!review.published_at}
                             className="btn-premium px-6 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isPublishing ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                                     Publishing...
+                                </>
+                            ) : review.published_at ? (
+                                <>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                                    Published
                                 </>
                             ) : (
                                 <>
@@ -201,13 +256,6 @@ export default function ReviewDetailsPage() {
                                 </>
                             )}
                         </button>
-                    )}
-
-                    {review.published_at && (
-                        <div className="px-4 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-sm font-bold flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                            Published
-                        </div>
                     )}
                 </div>
             </div>

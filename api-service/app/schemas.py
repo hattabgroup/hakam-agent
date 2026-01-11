@@ -15,6 +15,9 @@ class IntegrationCreate(BaseModel):
     provider: str
     token: str
 
+class IntegrationUpdate(BaseModel):
+    token: str
+
 class IntegrationResponse(BaseModel):
     id: int
     provider: str

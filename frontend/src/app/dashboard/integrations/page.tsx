@@ -19,10 +19,13 @@ export default function IntegrationsPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
 
     // Form state
     const [provider, setProvider] = useState("github");
     const [token, setToken] = useState("");
+    const [bitbucketUser, setBitbucketUser] = useState("");
+    const [bitbucketPassword, setBitbucketPassword] = useState("");
 
     const fetchIntegrations = async () => {
         try {
@@ -57,10 +60,35 @@ export default function IntegrationsPage() {
         try {
             await axios.delete(`/api/integrations/${id}`);
             setSuccess("Integration deleted successfully.");
+            // If deleting the one being edited, reset form
+            if (editingIntegration?.id === id) {
+                resetForm();
+            }
             fetchIntegrations();
         } catch (err: any) {
             setError(err.response?.data?.detail || "Failed to delete integration.");
         }
+    };
+
+    const handleEdit = (integration: Integration) => {
+        setEditingIntegration(integration);
+        setProvider(integration.provider);
+        // Clear tokens for security - force user to enter new one if they want to update
+        setToken("");
+        setBitbucketUser("");
+        setBitbucketPassword("");
+        setError(null);
+        setSuccess(null);
+    };
+
+    const resetForm = () => {
+        setEditingIntegration(null);
+        setProvider("github"); // Default
+        setToken("");
+        setBitbucketUser("");
+        setBitbucketPassword("");
+        setError(null);
+        setSuccess(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -69,13 +97,27 @@ export default function IntegrationsPage() {
         setError(null);
         setSuccess(null);
 
+        // For Bitbucket, combine user:pass
+        let finalToken = token;
+        if (provider === 'bitbucket') {
+            finalToken = `${bitbucketUser}:${bitbucketPassword}`;
+        }
+
         try {
-            await axios.post("/api/integrations", { provider, token });
-            setSuccess("Integration added successfully!");
-            setToken("");
+            if (editingIntegration) {
+                // UPDATE
+                await axios.put(`/api/integrations/${editingIntegration.id}`, { token: finalToken });
+                setSuccess("Integration updated successfully!");
+                resetForm();
+            } else {
+                // CREATE
+                await axios.post("/api/integrations", { provider, token: finalToken });
+                setSuccess("Integration added successfully!");
+                resetForm(); // Reset to defaults
+            }
             fetchIntegrations();
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Failed to add integration.");
+            setError(err.response?.data?.detail || `Failed to ${editingIntegration ? 'update' : 'add'} integration.`);
         } finally {
             setSubmitting(false);
         }
@@ -91,37 +133,82 @@ export default function IntegrationsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                {/* Add New Integration Form */}
+                {/* Add/Edit Integration Form */}
                 <div className="lg:col-span-1">
                     <div className="glass p-8 rounded-[32px] border-white/5 bg-white/5 sticky top-32">
-                        <h2 className="text-xl font-bold mb-6">Add Integration</h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold">{editingIntegration ? 'Edit Integration' : 'Add Integration'}</h2>
+                            {editingIntegration && (
+                                <button
+                                    onClick={resetForm}
+                                    className="text-xs font-bold text-zinc-500 hover:text-white uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
+
                         <form onSubmit={handleSubmit} className="space-gap-6">
                             <div className="mb-6">
                                 <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Provider</label>
                                 <select
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207.5L10%2012.5L15%207.5%22%20stroke%3D%22%23666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207.5L10%2012.5L15%207.5%22%20stroke%3D%22%23666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat disabled:opacity-50 disabled:cursor-not-allowed"
                                     value={provider}
                                     onChange={(e) => setProvider(e.target.value)}
                                     required
+                                    disabled={!!editingIntegration}
                                 >
                                     <option value="github" className="bg-zinc-900">GitHub</option>
                                     <option value="gitlab" className="bg-zinc-900">GitLab</option>
                                     <option value="bitbucket" className="bg-zinc-900">Bitbucket</option>
                                 </select>
+                                {editingIntegration && (
+                                    <p className="mt-2 text-[10px] text-zinc-500">Provider cannot be changed while editing.</p>
+                                )}
                             </div>
 
-                            <div className="mb-8">
-                                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Personal Access Token</label>
-                                <input
-                                    type="password"
-                                    placeholder="ghp_xxxxxxxxxxxx"
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                    value={token}
-                                    onChange={(e) => setToken(e.target.value)}
-                                    required
-                                />
-                                <p className="mt-2 text-[10px] text-zinc-500">Tokens are encrypted and stored securely.</p>
-                            </div>
+                            {provider === 'bitbucket' ? (
+                                <>
+                                    <div className="mb-6">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Bitbucket Email</label>
+                                        <input
+                                            type="text"
+                                            placeholder="your-email@example.com"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                            value={bitbucketUser}
+                                            onChange={(e) => setBitbucketUser(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-8">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">API Token</label>
+                                        <input
+                                            type="password"
+                                            placeholder="Atlassian API Token"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                            value={bitbucketPassword}
+                                            onChange={(e) => setBitbucketPassword(e.target.value)}
+                                            required
+                                        />
+                                        <p className="mt-2 text-[10px] text-zinc-500">
+                                            Create via <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" className="text-zinc-400 underline hover:text-white">Atlassian Security</a>.
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="mb-8">
+                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Personal Access Token</label>
+                                    <input
+                                        type="password"
+                                        placeholder="ghp_xxxxxxxxxxxx"
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        value={token}
+                                        onChange={(e) => setToken(e.target.value)}
+                                        required
+                                    />
+                                    <p className="mt-2 text-[10px] text-zinc-500">Tokens are encrypted and stored securely.</p>
+                                </div>
+                            )}
 
                             {error && (
                                 <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
@@ -140,7 +227,7 @@ export default function IntegrationsPage() {
                                 disabled={submitting}
                                 className="w-full btn-premium py-4 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {submitting ? "Connecting..." : "Add Integration"}
+                                {submitting ? (editingIntegration ? "Updating..." : "Connecting...") : (editingIntegration ? "Update Integration" : "Add Integration")}
                             </button>
                         </form>
                     </div>
@@ -190,6 +277,13 @@ export default function IntegrationsPage() {
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                                 Active
                                             </div>
+                                            <button
+                                                onClick={() => handleEdit(integration)}
+                                                className="p-2 rounded-xl bg-white/5 text-zinc-500 hover:text-white hover:bg-white/10 transition-colors"
+                                                title="Edit Integration"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                            </button>
                                             <button
                                                 onClick={() => handleDelete(integration.id)}
                                                 className="p-2 rounded-xl bg-white/5 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
