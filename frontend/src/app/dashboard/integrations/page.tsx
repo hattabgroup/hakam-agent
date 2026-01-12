@@ -258,8 +258,15 @@ export default function IntegrationsPage() {
                                     <div key={integration.id} className="p-8 hover:bg-white/[0.02] transition-colors group flex items-center justify-between">
                                         <div className="flex items-center gap-6">
                                             <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                                                {integration.provider === 'github' ? '🐙' :
-                                                    integration.provider === 'gitlab' ? '🦊' : '🏗️'}
+                                                {integration.provider === 'github' ? (
+                                                    <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" className="w-8 h-8 invert opacity-80" />
+                                                ) : integration.provider === 'gitlab' ? (
+                                                    <img src="https://www.svgrepo.com/show/448226/gitlab.svg" alt="GitLab" className="w-8 h-8 opacity-80" />
+                                                ) : integration.provider === 'bitbucket' ? (
+                                                    <img src="https://www.svgrepo.com/show/349308/bitbucket.svg" alt="Bitbucket" className="w-8 h-8 opacity-80" />
+                                                ) : (
+                                                    '🏗️'
+                                                )}
                                             </div>
                                             <div>
                                                 <h4 className="text-lg font-bold text-white capitalize">{integration.provider}</h4>
