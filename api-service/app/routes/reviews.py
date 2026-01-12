@@ -32,6 +32,22 @@ def run_review(
         db.add(pr)
         db.commit()
     
+    # Fetch Metadata if missing or placeholder
+    if not pr.author or not pr.title or pr.author == "Unknown (Bitbucket)":
+        try:
+            # Repo has integration relationship
+            integration = repo.integration
+            if integration:
+                token = security.decrypt_token(integration.token_encrypted)
+                details = mcp_client.get_pr_details(repo.provider, token, repo.repo_full_name, request.pr_number)
+                if details:
+                    pr.author = details.get("author")
+                    pr.title = details.get("title")
+                    db.add(pr)
+                    db.commit()
+        except Exception as e:
+            print(f"Failed to fetch PR metadata: {e}")
+
     # Create Review
     review = models.Review(pr_id=pr.id, status=models.ReviewStatus.QUEUED)
     db.add(review)

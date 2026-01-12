@@ -64,6 +64,25 @@ class MCPClient:
                     pass
             raise HTTPException(status_code=status_code, detail=detail)
 
+    def get_pr_details(self, provider: str, token: str, repo_full_name: str, pr_number: str):
+        try:
+            response = requests.post(f"{self.base_url}/providers/{provider}/prs/details", 
+                                   json={"token": token, "repo_full_name": repo_full_name, "pr_number": pr_number})
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            status_code = 502
+            detail = f"Failed to fetch PR details from MCP: {e}"
+            if hasattr(e, 'response') and e.response:
+                status_code = e.response.status_code
+                try:
+                    detail = e.response.json().get("error", detail)
+                except:
+                    pass
+            # Don't raise, just log or return None since metadata is optional but nice to have
+            print(f"[API] Warning: Could not fetch PR details: {detail}")
+            return {}
+
     def create_review(self, provider: str, token: str, repo_full_name: str, pr_number: str, comments: list, body: str = None):
         print(f"[API] Calling MCP to create PR Review for {repo_full_name} PR #{pr_number}")
         try:

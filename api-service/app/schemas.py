@@ -85,6 +85,8 @@ class PullRequest(BaseModel):
     id: int
     repo_id: int
     pr_external_id: str
+    author: Optional[str] = None
+    title: Optional[str] = None
     repository: RepositoryResponse # Include repository details
 
     class Config:

@@ -48,6 +48,33 @@ export async function listRepos(token: string) {
 }
 
 /**
+ * Get PR Details (Title, Author, Head SHA)
+ */
+export async function getPrDetails(token: string, repo_full_name: string, pr_number: string) {
+    try {
+        const authHeader = getAuthHeader(token);
+        const response = await axios.get(`${API_URL}/repositories/${repo_full_name}/pullrequests/${pr_number}`, {
+            headers: {
+                'Authorization': authHeader,
+                'Accept': 'application/json'
+            }
+        });
+
+        console.log(`[MCP] Bitbucket PR Author Payload for ${repo_full_name} #${pr_number}:`, JSON.stringify(response.data.author, null, 2));
+
+        return {
+            title: response.data.title,
+            author: response.data.author?.display_name || response.data.author?.nickname || "Unknown",
+            head_sha: response.data.source?.commit?.hash,
+            html_url: response.data.links?.html?.href
+        };
+    } catch (error: any) {
+        console.error('Bitbucket getPrDetails error:', error.response?.data || error.message);
+        throw new Error(`Failed to fetch Bitbucket PR details: ${error.message}`);
+    }
+}
+
+/**
  * Get the diff of a Pull Request
  */
 export async function getPrDiff(token: string, repo_full_name: string, pr_number: string) {

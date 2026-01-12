@@ -31,6 +31,8 @@ interface Review {
         id: number;
         repo_id: number;
         pr_external_id: number;
+        author?: string;
+        title?: string;
         repository: {
             id: number;
             repo_full_name: string;
@@ -198,9 +200,25 @@ export default function ReviewDetailsPage() {
                     <div className="flex items-center gap-3 text-zinc-400 text-sm">
                         <span className="font-mono bg-white/5 px-2 py-1 rounded">{review.pull_request.repository.repo_full_name}</span>
                         <span>•</span>
-                        <span>PR #{review.pull_request.pr_external_id}</span>
+                        <a
+                            href={`https://${review.pull_request.repository.provider === 'github' ? 'github.com' : review.pull_request.repository.provider === 'gitlab' ? 'gitlab.com' : 'bitbucket.org'}/${review.pull_request.repository.repo_full_name}/${review.pull_request.repository.provider === 'gitlab' ? '-/merge_requests' : 'pull-requests'}/${review.pull_request.pr_external_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-400 hover:text-indigo-300 hover:underline"
+                        >
+                            PR #{review.pull_request.pr_external_id}
+                        </a>
                         <span>•</span>
                         <span>{new Date(review.created_at).toLocaleDateString()}</span>
+                        {review.pull_request.author && (
+                            <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="text-zinc-500">Author:</span>
+                                    <span className="text-white font-medium">{review.pull_request.author}</span>
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 

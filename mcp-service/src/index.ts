@@ -35,6 +35,26 @@ app.post('/providers/:provider/repos/list', async (req: Request, res: Response) 
     }
 });
 
+// Providers: PR Details
+app.post('/providers/:provider/prs/details', async (req: Request, res: Response) => {
+    const { provider } = req.params;
+    const { token, repo_full_name, pr_number } = req.body;
+
+    try {
+        if (provider === 'github') {
+            const result = await github.getPrDetails(token, repo_full_name, pr_number);
+            res.json(result);
+        } else if (provider === 'bitbucket') {
+            const result = await bitbucket.getPrDetails(token, repo_full_name, pr_number);
+            res.json(result);
+        } else {
+            res.status(501).json({ error: "Provider not implemented yet" });
+        }
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Providers: PR Diff
 app.post('/providers/:provider/prs/diff', async (req: Request, res: Response) => {
     const { provider } = req.params;

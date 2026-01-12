@@ -19,6 +19,39 @@ export async function listRepos(token: string) {
     }
 }
 
+async function getUserName(token: string, username: string): Promise<string> {
+    try {
+        const response = await axios.get(`${GITHUB_API_URL}/users/${username}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data.name || username;
+    } catch (e) {
+        console.warn(`[MCP] Failed to fetch user name for ${username}, falling back to login.`);
+        return username;
+    }
+}
+
+export async function getPrDetails(token: string, repo_full_name: string, pr_number: number) {
+    console.log(`[MCP] Fetching details for ${repo_full_name} PR #${pr_number}...`);
+    try {
+        const prResponse = await axios.get(`${GITHUB_API_URL}/repos/${repo_full_name}/pulls/${pr_number}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const authorName = await getUserName(token, prResponse.data.user.login);
+
+        return {
+            title: prResponse.data.title,
+            author: authorName,
+            head_sha: prResponse.data.head.sha,
+            html_url: prResponse.data.html_url
+        };
+    } catch (error: any) {
+        console.error(`[MCP] Error fetching PR details: ${error.response?.data?.message || error.message}`);
+        throw new Error(`GitHub API Error: ${error.response?.data?.message || error.message}`);
+    }
+}
+
 export async function getPrDiff(token: string, repo_full_name: string, pr_number: number) {
     console.log(`[MCP] Fetching diff for ${repo_full_name} PR #${pr_number}...`);
     try {
@@ -35,10 +68,12 @@ export async function getPrDiff(token: string, repo_full_name: string, pr_number
             }
         });
 
+        const authorName = await getUserName(token, prResponse.data.user.login);
+
         console.log(`[MCP] Successfully fetched diff.`);
         return {
             title: prResponse.data.title,
-            author: prResponse.data.user.login,
+            author: authorName,
             head_sha: prResponse.data.head.sha,
             diff: diffResponse.data
         };
