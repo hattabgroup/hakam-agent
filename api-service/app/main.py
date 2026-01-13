@@ -95,6 +95,8 @@ app.include_router(repositories.router)
 app.include_router(policies.router)
 app.include_router(reviews.router)
 app.include_router(reviews.internal_router)
+from .routes import settings
+app.include_router(settings.router)
 
 @app.get("/health")
 def health_check():
