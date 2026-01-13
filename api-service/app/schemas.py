@@ -135,4 +135,13 @@ class DashboardStatsResponse(BaseModel):
     quality_score_change: str
     critical_issues: int
     critical_issues_change: str
+    critical_issues: int
+    critical_issues_change: str
     recent_reviews: List[DashboardReviewSummary]
+
+class SettingsItem(BaseModel):
+    key: str
+    value: str
+
+class SettingsUpdate(BaseModel):
+    settings: List[SettingsItem]

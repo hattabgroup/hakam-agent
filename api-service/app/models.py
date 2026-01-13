@@ -130,3 +130,16 @@ class ReviewViolation(Base):
     review = relationship("Review", back_populates="violations")
     policy_category = relationship("PolicyCategory")
     policy_rule = relationship("PolicyRule")
+
+class Settings(Base):
+    __tablename__ = "settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("api_users.id"), nullable=False)
+    key = Column(String(255), nullable=False)
+    value = Column(Text, nullable=True)
+    
+    # We want uniqueness per user+key
+    # Note: In a real migration we'd add UniqueConstraint('user_id', 'key', name='_user_key_uc')
+
+    user = relationship("UserLocal")
