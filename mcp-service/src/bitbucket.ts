@@ -176,3 +176,53 @@ export async function createPRReview(token: string, repo_full_name: string, pr_n
         throw new Error(`Failed to create Bitbucket PR review: ${error.message}`);
     }
 }
+
+/**
+ * Create a Webhook for the repository
+ */
+export async function createWebhook(token: string, repo_full_name: string, webhook_url: string, secret?: string) {
+    console.log(`[MCP] Creating Webhook on ${repo_full_name}...`);
+    try {
+        const authHeader = getAuthHeader(token);
+
+        let finalUrl = webhook_url;
+        if (secret) {
+            finalUrl = `${webhook_url}?secret=${secret}`;
+        }
+
+        // 1. Check if webhook already exists
+        const hooksResponse = await axios.get(`${API_URL}/repositories/${repo_full_name}/hooks`, {
+            headers: { Authorization: authHeader }
+        });
+
+        const existingHook = hooksResponse.data.values.find((hook: any) => hook.url === finalUrl);
+        if (existingHook) {
+            console.log(`[MCP] Webhook already exists: ${existingHook.uuid}`);
+            return { id: existingHook.uuid, active: existingHook.active };
+        }
+
+        // 2. Create Webhook
+        const response = await axios.post(`${API_URL}/repositories/${repo_full_name}/hooks`,
+            {
+                description: "Hakam Auto-Review Webhook",
+                url: finalUrl,
+                active: true,
+                events: [
+                    "pullrequest:created",
+                    "pullrequest:updated"
+                ]
+            },
+            {
+                headers: {
+                    'Authorization': authHeader,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+        console.log(`[MCP] Webhook created: ${response.data.uuid}`);
+        return { id: response.data.uuid, active: response.data.active };
+    } catch (error: any) {
+        console.error('Bitbucket createWebhook error:', error.response?.data || error.message);
+        throw new Error(`Failed to create Bitbucket webhook: ${error.message}`);
+    }
+}

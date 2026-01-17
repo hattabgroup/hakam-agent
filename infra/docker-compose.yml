@@ -49,6 +49,8 @@ services:
       MCP_SERVICE_URL: ${MCP_SERVICE_URL:-http://mcp-service:8000}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
       INTERNAL_WORKER_SECRET: ${INTERNAL_WORKER_SECRET}
+      API_BASE_URL: ${API_BASE_URL}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
     depends_on:
       db:
         condition: service_healthy
