@@ -55,7 +55,7 @@ class Repository(Base):
 
     user = relationship("UserLocal", back_populates="repositories")
     integration = relationship("Integration")
-    pull_requests = relationship("PullRequest", back_populates="repository")
+    pull_requests = relationship("PullRequest", back_populates="repository", cascade="all, delete-orphan")
 
 class PolicyCategory(Base):
     __tablename__ = "policy_categories"
@@ -93,7 +93,7 @@ class PullRequest(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     repository = relationship("Repository", back_populates="pull_requests")
-    reviews = relationship("Review", back_populates="pull_request")
+    reviews = relationship("Review", back_populates="pull_request", cascade="all, delete-orphan")
 
 class Review(Base):
     __tablename__ = "reviews"
@@ -107,7 +107,7 @@ class Review(Base):
     provider_comment_id = Column(String(255), nullable=True)
 
     pull_request = relationship("PullRequest", back_populates="reviews")
-    violations = relationship("ReviewViolation", back_populates="review")
+    violations = relationship("ReviewViolation", back_populates="review", cascade="all, delete-orphan")
 
 class ReviewViolation(Base):
     __tablename__ = "review_violations"

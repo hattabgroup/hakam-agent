@@ -3,6 +3,17 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import schemas, security, models, database
 from ..services.mcp_client import mcp_client
+import os
+
+API_BASE_URL = os.getenv("API_BASE_URL")
+if not API_BASE_URL:
+    API_BASE_URL = "http://localhost:8000"
+    print("[WARN] API_BASE_URL not set or empty, defaulting to localhost.")
+
+print(f"[INFO] Using API_BASE_URL: {API_BASE_URL}")
+
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "supersecret")
+
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 
@@ -78,6 +89,23 @@ def save_repos(
     for r in saved_repos:
         db.refresh(r)
         
+        # Create Webhook if enabled
+        if r.is_enabled:
+            try:
+                # Decrypt token
+                token = security.decrypt_token(integration.token_encrypted)
+                
+                # Construct Webhook URL
+                webhook_url = f"{API_BASE_URL}/webhooks/{r.provider.lower()}"
+                print(f"[INFO] Generated Webhook URL: {webhook_url}")
+                
+                # Create Webhook (MCP handles idempotency)
+                mcp_client.create_webhook(r.provider, token, r.repo_full_name, webhook_url, WEBHOOK_SECRET)
+                print(f"Webhook ensured for {r.repo_full_name}")
+            except Exception as e:
+                print(f"Failed to create webhook for {r.repo_full_name}: {e}")
+                # Don't fail the request, just log it
+
     return saved_repos
 
 @router.get("/", response_model=List[schemas.RepositoryResponse])

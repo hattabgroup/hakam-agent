@@ -111,4 +111,33 @@ class MCPClient:
                     pass
             raise HTTPException(status_code=status_code, detail=detail)
 
+
+
+    def create_webhook(self, provider: str, token: str, repo_full_name: str, webhook_url: str, secret: str = None):
+        print(f"[API] Calling MCP to create Webhook for {repo_full_name}")
+        try:
+            url = f"{self.base_url}/providers/{provider}/webhooks"
+            payload = {
+                "token": token,
+                "repo_full_name": repo_full_name,
+                "webhook_url": webhook_url
+            }
+            if secret:
+                payload["secret"] = secret
+
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[API] MCP Error: {e}")
+            status_code = 502
+            detail = f"Failed to create webhook via MCP: {e}"
+            if hasattr(e, 'response') and e.response:
+                status_code = e.response.status_code
+                try:
+                    detail = e.response.json().get("error", detail)
+                except:
+                    pass
+            raise HTTPException(status_code=status_code, detail=detail)
+
 mcp_client = MCPClient()

@@ -122,3 +122,45 @@ export async function createComment(token: string, repo_full_name: string, pr_nu
         throw new Error(`GitHub API Error: ${error.response?.data?.message || error.message}`);
     }
 }
+
+export async function createWebhook(token: string, repo_full_name: string, webhook_url: string, secret: string) {
+    console.log(`[MCP] Creating Webhook on ${repo_full_name}...`);
+    try {
+        // 1. Check if webhook already exists
+        const hooksResponse = await axios.get(`${GITHUB_API_URL}/repos/${repo_full_name}/hooks`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const existingHook = hooksResponse.data.find((hook: any) => hook.config.url === webhook_url);
+        if (existingHook) {
+            console.log(`[MCP] Webhook already exists: ${existingHook.id}`);
+            return { id: existingHook.id.toString(), active: existingHook.active };
+        }
+
+        // 2. Create Webhook
+        const response = await axios.post(`${GITHUB_API_URL}/repos/${repo_full_name}/hooks`,
+            {
+                name: "web",
+                active: true,
+                events: ["pull_request"],
+                config: {
+                    url: webhook_url,
+                    content_type: "json",
+                    secret: secret,
+                    insecure_ssl: "0"
+                }
+            },
+            {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+        console.log(`[MCP] Webhook created: ${response.data.id}`);
+        return { id: response.data.id.toString(), active: response.data.active };
+    } catch (error: any) {
+        console.error(`[MCP] Error creating webhook: ${error.response?.data?.message || error.message}`);
+        if (error.response?.data?.errors) {
+            console.error(`[MCP] Validation Errors:`, JSON.stringify(error.response.data.errors));
+        }
+        throw new Error(`GitHub API Error: ${error.response?.data?.message || error.message}`);
+    }
+}

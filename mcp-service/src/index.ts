@@ -115,6 +115,26 @@ app.post('/providers/:provider/prs/reviews', async (req: Request, res: Response)
     }
 });
 
+// Providers: Create Webhook
+app.post('/providers/:provider/webhooks', async (req: Request, res: Response) => {
+    const { provider } = req.params;
+    const { token, repo_full_name, webhook_url, secret } = req.body;
+
+    try {
+        if (provider === 'github') {
+            const result = await github.createWebhook(token, repo_full_name, webhook_url, secret);
+            res.json(result);
+        } else if (provider === 'bitbucket') {
+            const result = await bitbucket.createWebhook(token, repo_full_name, webhook_url, secret);
+            res.json(result);
+        } else {
+            res.status(501).json({ error: "Provider not implemented yet" });
+        }
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Hakam MCP Service running on port ${port}`);
 });

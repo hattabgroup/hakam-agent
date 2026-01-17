@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from . import database, models
-from .routes import users, integrations, repositories, policies, reviews
+from .routes import users, integrations, repositories, policies, reviews, webhooks
 
 # Create tables
 models.Base.metadata.create_all(bind=database.engine)
@@ -97,6 +97,7 @@ app.include_router(reviews.router)
 app.include_router(reviews.internal_router)
 from .routes import settings
 app.include_router(settings.router)
+app.include_router(webhooks.router)
 
 @app.get("/health")
 def health_check():
