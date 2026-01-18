@@ -98,6 +98,8 @@ app.include_router(reviews.internal_router)
 from .routes import settings
 app.include_router(settings.router)
 app.include_router(webhooks.router)
+from .routes import reports
+app.include_router(reports.router)
 
 @app.get("/health")
 def health_check():
