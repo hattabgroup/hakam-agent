@@ -21,6 +21,18 @@ with database.engine.connect() as conn:
         except Exception as e:
             print(f"Auto-migration failed for repositories: {e}")
 
+    # Auto-migration for Stripe Customer ID in Users
+    try:
+        conn.execute(text("SELECT stripe_customer_id FROM api_users LIMIT 1"))
+    except Exception:
+        try:
+            print("Auto-migrating: Adding missing 'stripe_customer_id' to api_users table...")
+            conn.execute(text("ALTER TABLE api_users ADD COLUMN stripe_customer_id VARCHAR(255) NULL"))
+            conn.execute(text("CREATE INDEX ix_api_users_stripe_customer_id ON api_users (stripe_customer_id)"))
+            conn.commit()
+        except Exception as e:
+            print(f"Auto-migration failed for api_users: {e}")
+
     # Auto-migration for Review Violations (Phase 2 Refactor)
     try:
         conn.execute(text("SELECT policy_category_id FROM review_violations LIMIT 1"))
@@ -100,6 +112,8 @@ app.include_router(settings.router)
 app.include_router(webhooks.router)
 from .routes import reports
 app.include_router(reports.router)
+from .routes import billing
+app.include_router(billing.router)
 
 @app.get("/health")
 def health_check():

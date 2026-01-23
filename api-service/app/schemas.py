@@ -145,3 +145,34 @@ class SettingsItem(BaseModel):
 
 class SettingsUpdate(BaseModel):
     settings: List[SettingsItem]
+
+# Billing Schemas
+class CheckoutSessionRequest(BaseModel):
+    price_id: str
+    extra_repos: int = 0
+
+class UpgradeRequest(BaseModel):
+    price_id: str
+    extra_repos: int = 0
+
+class CheckoutSessionResponse(BaseModel):
+    url: str
+
+class PortalSessionResponse(BaseModel):
+    url: str
+
+class SubscriptionMessage(BaseModel):
+    plan_name: str
+    status: str
+    trial_days_left: Optional[int]
+    current_period_end: Optional[datetime]
+    allowed_repos: int
+    used_repos: int
+    extra_repos_quantity: int
+    next_bill_date: Optional[datetime]
+
+class EntitlementCheck(BaseModel):
+    allowed: bool
+    current_count: int
+    limit: int
+

@@ -29,6 +29,10 @@ class UserLocal(Base):
     integrations = relationship("Integration", back_populates="user")
     repositories = relationship("Repository", back_populates="user")
     policy_categories = relationship("PolicyCategory", back_populates="user")
+    subscription = relationship("Subscription", back_populates="user", uselist=False)
+
+    # Stripe mapping
+    stripe_customer_id = Column(String(255), nullable=True, index=True)
 
 class Integration(Base):
     __tablename__ = "integrations"
@@ -143,3 +147,33 @@ class Settings(Base):
     # Note: In a real migration we'd add UniqueConstraint('user_id', 'key', name='_user_key_uc')
 
     user = relationship("UserLocal")
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("api_users.id"), unique=True, nullable=False)
+    stripe_subscription_id = Column(String(255), unique=True, nullable=False)
+    stripe_customer_id = Column(String(255), nullable=False)
+    status = Column(String(50), nullable=False) # active, trialing, past_due, canceled, incomplete
+    
+    current_period_end = Column(DateTime(timezone=True), nullable=True)
+    trial_end = Column(DateTime(timezone=True), nullable=True)
+    cancel_at_period_end = Column(Boolean, default=False)
+    
+    plan_price_id = Column(String(255), nullable=True)
+    extra_repos_quantity = Column(Integer, default=0)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("UserLocal", back_populates="subscription")
+
+class WebhookEvent(Base):
+    __tablename__ = "webhook_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    stripe_event_id = Column(String(255), unique=True, nullable=False)
+    type = Column(String(255), nullable=False)
+    processed_at = Column(DateTime(timezone=True), server_default=func.now())
+

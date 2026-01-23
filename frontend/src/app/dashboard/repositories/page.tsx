@@ -37,10 +37,23 @@ export default function RepositoriesPage() {
     const [savingLoading, setSavingLoading] = useState(false);
     const [togglingRepoIds, setTogglingRepoIds] = useState<Set<string>>(new Set());
 
+    // Subscription State
+    const [subDetails, setSubDetails] = useState<any>(null);
+
     // Fetch initial data
     useEffect(() => {
         fetchInitialData();
+        fetchSubscription();
     }, []);
+
+    const fetchSubscription = async () => {
+        try {
+            const res = await axios.get('/api/billing/subscription');
+            setSubDetails(res.data);
+        } catch (error) {
+            console.error("Failed to fetch subscription", error);
+        }
+    };
 
     const fetchInitialData = async () => {
         setLoading(true);
@@ -99,6 +112,8 @@ export default function RepositoriesPage() {
             // Refresh main list
             const repoRes = await axios.get('/api/repositories');
             setSavedRepos(repoRes.data);
+            // Refresh subscription stats as usage changed
+            fetchSubscription();
 
             setSuccess(`Removed project ${repo.repo_full_name}`);
             setTimeout(() => setSuccess(null), 3000);
@@ -139,10 +154,18 @@ export default function RepositoriesPage() {
             // Refresh main list
             const repoRes = await axios.get('/api/repositories');
             setSavedRepos(repoRes.data);
+            // Refresh subscription stats
+            fetchSubscription();
 
             setSuccess(isRemoving ? `Removed ${repo.repo_full_name}` : `Linked ${repo.repo_full_name}`);
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
+            // Check for plan limit error (402 or check text)
+            if (err.response?.status === 402 || (err.response?.data?.detail && err.response.data.detail.includes("Plan limit"))) {
+                if (confirm(err.response.data.detail + " \n\nGo to Billing?")) {
+                    window.location.href = "/dashboard/billing";
+                }
+            }
             setError(err.response?.data?.detail || "Failed to save repository");
         } finally {
             setTogglingRepoIds(prev => {
@@ -173,22 +196,40 @@ export default function RepositoriesPage() {
         }
     };
 
+    // Derived state for button
+    const isOverLimit = subDetails ? subDetails.used_repos >= subDetails.allowed_repos : false;
+
     return (
         <div className="px-10 py-10">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
                 <div>
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Active Projects</h1>
-                    <p className="text-[var(--fg-muted)]">Manage the repositories currently monitored by Hakam.</p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-[var(--fg-muted)]">Manage the repositories currently monitored by Hakam.</p>
+                        {subDetails && (
+                            <span className={`text-xs px-2 py-0.5 rounded border ${isOverLimit ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-zinc-400 border-white/10'}`}>
+                                Usage: {subDetails.used_repos} / {subDetails.allowed_repos}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn-premium px-6 py-3 text-sm flex items-center gap-2 group"
-                >
-                    <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                    Add New Project
-                </button>
+                <div className="flex gap-2">
+                    {isOverLimit && (
+                        <a href="/dashboard/billing" className="btn-secondary px-6 py-3 text-sm flex items-center gap-2 text-indigo-400 hover:text-indigo-300">
+                            Upgrade Plan
+                        </a>
+                    )}
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        disabled={isOverLimit}
+                        className={`btn-premium px-6 py-3 text-sm flex items-center gap-2 group ${isOverLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                        Add New Project
+                    </button>
+                </div>
             </div>
 
             {/* Notifications */}
@@ -290,6 +331,7 @@ export default function RepositoriesPage() {
                                         <button
                                             onClick={() => setIsModalOpen(true)}
                                             className="text-indigo-400 hover:text-indigo-300 font-bold text-sm underline underline-offset-4"
+                                            disabled={isOverLimit}
                                         >
                                             Add your first project
                                         </button>

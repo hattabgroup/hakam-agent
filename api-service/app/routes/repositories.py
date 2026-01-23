@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import schemas, security, models, database
 from ..services.mcp_client import mcp_client
+from ..services.entitlements import entitlements_service
 import os
 
 API_BASE_URL = os.getenv("API_BASE_URL")
@@ -53,6 +54,32 @@ def save_repos(
     
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found or unauthorized")
+
+    # Check Entitlements
+    current_sub = db.query(models.Subscription).filter(models.Subscription.user_id == current_user.id).first()
+    limit = entitlements_service.get_repo_limit(current_sub)
+    current_usage = db.query(models.Repository).filter(
+        models.Repository.user_id == current_user.id,
+        models.Repository.is_enabled == True
+    ).count()
+
+    # Pre-calculate how many new repos we are enabling
+    new_to_enable = 0
+    for repo_in in repo_create.repos:
+        if not repo_in.is_enabled:
+            continue
+            
+        existing = db.query(models.Repository).filter(
+            models.Repository.user_id == current_user.id,
+            models.Repository.integration_id == repo_create.integration_id,
+            models.Repository.repo_external_id == repo_in.repo_external_id
+        ).first()
+        
+        if not existing or not existing.is_enabled:
+            new_to_enable += 1
+            
+    if current_usage + new_to_enable > limit:
+         raise HTTPException(status_code=402, detail=f"Plan limit reached. You can enable {limit - current_usage} more repositories. Upgrade your plan to add more.")
 
     saved_repos = []
     for repo_in in repo_create.repos:

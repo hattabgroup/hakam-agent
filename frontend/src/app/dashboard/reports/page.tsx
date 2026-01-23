@@ -68,11 +68,34 @@ export default function ReportingPage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const [isRestricted, setIsRestricted] = useState(false);
+
     useEffect(() => {
         if (!loading && !user) {
             router.push("/login");
+        } else if (user) {
+            checkAccess();
         }
     }, [user, loading, router]);
+
+    const checkAccess = async () => {
+        try {
+            const res = await fetch('/api/billing/subscription');
+            if (res.ok) {
+                const sub = await res.json();
+                // Gate if Starter (which has 3 repos limit usually, or check plan name)
+                // Assuming 'Starter' is the name returned by backend
+                // Or better, check allowed_repos < 10 (Team has 10)
+                if (sub.plan_name === 'Starter' || sub.plan_name === 'Free') {
+                    setIsRestricted(true);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to check access:", e);
+        }
+    };
+
+
 
     const fetchFilters = async () => {
         try {
@@ -211,6 +234,27 @@ export default function ReportingPage() {
         link.click();
         document.body.removeChild(link);
     };
+
+    if (isRestricted) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+                <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6 border border-indigo-500/20">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-4">Advanced Reporting</h1>
+                <p className="text-zinc-400 max-w-md mb-8">
+                    Gain insights into your code quality and policy violations with our advanced reporting tools.
+                    This feature is available on the <strong>Team Plan</strong> and above.
+                </p>
+                <Link
+                    href="/dashboard/billing"
+                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold shadow-lg transition-all"
+                >
+                    Upgrade to Team
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="px-10 py-10 max-w-7xl mx-auto">
