@@ -69,10 +69,7 @@ export default function DashboardPage() {
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Dashboard</h1>
                     <p className="text-[var(--fg-muted)]">Welcome back, <span className="text-white font-medium">{user?.email}</span></p>
                 </div>
-                <div className="flex gap-4">
-                    <button className="btn-outline px-6 py-2.5 text-sm">Download Report</button>
-                    <Link href="/dashboard/reviews/run" className="btn-premium px-6 py-2.5 text-sm">+ New Review</Link>
-                </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -116,11 +113,11 @@ export default function DashboardPage() {
                                         <td className="px-8 py-6 font-semibold text-zinc-300 group-hover:text-white">{row.repo}</td>
                                         <td className="px-8 py-6">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${row.status === 'Clean' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                                    row.status === 'Warning' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                                                        row.status === 'Critical' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                                                            row.status === 'Failed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                                                                row.status === 'Issues' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                                                                    'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+                                                row.status === 'Warning' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                                    row.status === 'Critical' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                                        row.status === 'Failed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                                            row.status === 'Issues' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                                                                'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
                                                 }`}>
                                                 {row.status}
                                             </span>
