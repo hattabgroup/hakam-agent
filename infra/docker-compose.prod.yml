@@ -1,0 +1,25 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: hakam-router
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - api-service
+    restart: always
+
+  # Production tweaks for existing services
+  frontend:
+    restart: always
+
+  api-service:
+    restart: always
+
+  auth-service:
+    restart: always
+
+  db:
+    restart: always
