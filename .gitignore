@@ -6,3 +6,7 @@
 
 # Ignore temporary brain/agent files if stored locally but not meant for repo
 .gemini/
+
+# SSL Certs
+infra/certs/*.pem
+infra/certs/*.key
