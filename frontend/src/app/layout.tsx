@@ -1,5 +1,6 @@
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
             <body className="selection:bg-indigo-500/30">
                 <AuthProvider>
                     <Navbar />
+                    <GoogleAnalytics />
                     {children}
                 </AuthProvider>
             </body>
