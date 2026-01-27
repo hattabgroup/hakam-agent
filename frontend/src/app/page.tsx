@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Footer from "@/components/Footer";
 
 export default function Home() {
     return (
@@ -10,16 +11,16 @@ export default function Home() {
             {/* HERO SECTION */}
             <section className="container mx-auto px-6 pt-20 pb-32 text-center lg:text-left flex flex-col lg:flex-row items-center gap-16">
                 <div className="lg:w-1/2 flex flex-col items-center lg:items-start">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-8 animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                        New: AI-Driven Learning Paths
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-bold uppercase tracking-widest mb-8 animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]" />
+                        Next-Gen AI Agent
                     </div>
                     <h1 className="text-5xl sm:text-7xl font-black tracking-tighter leading-[1.1] mb-8">
-                        Code Reviews that <br />
-                        <span className="text-gradient">Teach & Enforce.</span>
+                        The First <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 animate-gradient-x">AI Agent</span> <br />
+                        That Fixes Your Code.
                     </h1>
                     <p className="text-lg sm:text-xl text-[var(--fg-muted)] mb-12 max-w-2xl leading-relaxed">
-                        Hakam doesn’t just find bugs—it reviews code based on <strong>your custom policies</strong> and suggests specific <strong>courses and topics</strong> to upskill your developers instantly.
+                        Hakam isn't just a bot—it's an autonomous <strong>AI Agent</strong> that proactively reviews pull requests, enforces your custom policies, and teaches your team best practices.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
                         <Link href="/signup" className="btn-premium w-64 lg:w-fit">Start Free Trial</Link>
@@ -193,7 +194,7 @@ export default function Home() {
             </section>
 
             {/* CTA SECTION */}
-            <section className="container mx-auto px-6 py-32">
+            <section id="ready" className="container mx-auto px-6 py-32">
                 <div className="relative rounded-[48px] overflow-hidden p-16 text-center shadow-3xl">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 -z-10" />
                     <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] -z-10" />
@@ -201,42 +202,13 @@ export default function Home() {
                     <p className="text-indigo-100/80 text-lg mb-12 max-w-xl mx-auto">Join hundreds of engineers who ship better code, faster. Get started with Hakam today.</p>
                     <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
                         <Link href="/signup" className="px-10 py-5 bg-white text-indigo-600 rounded-full font-black text-lg hover:scale-105 transition-transform shadow-2xl">Start Now - Free</Link>
-                        <Link href="#docs" className="px-10 py-5 bg-indigo-900/30 text-white rounded-full font-bold text-lg hover:bg-indigo-900/50 transition-colors border border-white/20">Read Documentation</Link>
+                        <Link href="#docs" className="px-10 py-5 bg-indigo-900/30 text-white rounded-full font-bold text-lg hover:bg-indigo-900/50 transition-colors border border-white/20">Read Again</Link>
                     </div>
                 </div>
             </section>
 
             {/* FOOTER */}
-            <footer className="py-20 border-t border-[var(--border)] text-center text-sm text-[var(--fg-muted)]">
-                <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 text-left mb-12">
-                    <div className="col-span-1 md:col-span-2">
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-black text-white">H</div>
-                            <span className="text-lg font-bold tracking-tight text-white uppercase italic">Hakam</span>
-                        </div>
-                        <p className="max-w-xs leading-relaxed">Intelligence-driven code analysis for modern engineering teams.</p>
-                    </div>
-                    <div>
-                        <h4 className="text-white font-bold mb-6">Product</h4>
-                        <ul className="flex flex-col gap-4">
-                            <li><Link href="#features" className="hover:text-indigo-400">Features</Link></li>
-                            <li><Link href="#pricing" className="hover:text-indigo-400">Pricing</Link></li>
-                            <li><Link href="#docs" className="hover:text-indigo-400">Documentation</Link></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 className="text-white font-bold mb-6">Company</h4>
-                        <ul className="flex flex-col gap-4">
-                            <li><Link href="#" className="hover:text-indigo-400">About</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400">Privacy</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400">Terms</Link></li>
-                        </ul>
-                    </div>
-                </div>
-                <div className="border-t border-[var(--border)] pt-12">
-                    <p>© 2026 Hakam Intelligence. Built for high-performance teams.</p>
-                </div>
-            </footer>
+            <Footer />
         </main>
     );
 }

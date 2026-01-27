@@ -31,8 +31,10 @@ export default function Navbar() {
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--fg-muted)]">
                     {pathname === '/' && (
                         <>
+                            <Link href="#" className="hover:text-white transition-colors">Home</Link>
                             <Link href="#features" className="hover:text-white transition-colors">Features</Link>
                             <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+                            <Link href="#ready" className="hover:text-white transition-colors">Ready?</Link>
                         </>
                     )}
                     {user && (
