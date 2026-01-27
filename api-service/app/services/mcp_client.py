@@ -140,4 +140,22 @@ class MCPClient:
                     pass
             raise HTTPException(status_code=status_code, detail=detail)
 
+    def validate_token(self, provider: str, token: str):
+        try:
+            url = f"{self.base_url}/providers/{provider}/validate"
+            response = requests.post(url, json={"token": token})
+            # We don't raise immediately on 400/401 because we want to return the validation result struct
+            if response.status_code == 200:
+                return response.json()
+            
+            # If failed, try to parse error or generic failure
+            try:
+                error_data = response.json()
+                return {"valid": False, "message": error_data.get("error", "Validation failed")}
+            except:
+                return {"valid": False, "message": f"Validation failed with status {response.status_code}"}
+                
+        except requests.RequestException as e:
+            return {"valid": False, "message": f"MCP Service Unavailable: {e}"}
+
 mcp_client = MCPClient()

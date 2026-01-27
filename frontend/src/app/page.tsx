@@ -12,20 +12,20 @@ export default function Home() {
                 <div className="lg:w-1/2 flex flex-col items-center lg:items-start">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-8 animate-pulse">
                         <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                        New: Hakam AI 2.0 is live
+                        New: AI-Driven Learning Paths
                     </div>
                     <h1 className="text-5xl sm:text-7xl font-black tracking-tighter leading-[1.1] mb-8">
-                        Review code with <br />
-                        <span className="text-gradient">Intelligence.</span>
+                        Code Reviews that <br />
+                        <span className="text-gradient">Teach & Enforce.</span>
                     </h1>
                     <p className="text-lg sm:text-xl text-[var(--fg-muted)] mb-12 max-w-2xl leading-relaxed">
-                        Hakam automates your code review process, catching security vulnerabilities, logic flaws, and style inconsistencies before they hit production.
+                        Hakam doesn’t just find bugs—it reviews code based on <strong>your custom policies</strong> and suggests specific <strong>courses and topics</strong> to upskill your developers instantly.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                        <Link href="/signup" className="btn-premium w-64 lg:w-fit">Start Now - It's Free</Link>
-                        <Link href="#features" className="btn-outline w-64 lg:w-fit">Explore Features</Link>
+                        <Link href="/signup" className="btn-premium w-64 lg:w-fit">Start Free Trial</Link>
+                        <Link href="#features" className="btn-outline w-64 lg:w-fit">See How It Works</Link>
                     </div>
-                    <div className="mt-12 flex items-center gap-8">
+                    <div className="mt-12 flex items-center gap-8 opacity-70">
                         <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" className="h-6 invert" />
                         <img src="https://www.svgrepo.com/show/448226/gitlab.svg" alt="GitLab" className="h-6" />
                         <img src="https://www.svgrepo.com/show/349308/bitbucket.svg" alt="Bitbucket" className="h-6" />
@@ -35,23 +35,65 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-[50px] -z-10 group-hover:scale-110 transition-transform duration-1000" />
                     <div className="glass rounded-[32px] p-2 bg-white/5 border-white/10 shadow-2xl overflow-hidden ring-1 ring-white/20">
                         <div className="bg-[#0f0f12] rounded-[24px] overflow-hidden">
-                            {/* Aesthetic code snippet view */}
+                            {/* Smart Code Snippet View */}
                             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/5">
                                 <div className="w-3 h-3 rounded-full bg-red-500/50" />
                                 <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                                 <div className="w-3 h-3 rounded-full bg-green-500/50" />
-                                <span className="text-[10px] text-zinc-500 font-mono ml-2">analysis_report.py</span>
+                                <span className="text-[10px] text-zinc-500 font-mono ml-2">CheckoutController.ts</span>
                             </div>
-                            <div className="p-8 font-mono text-sm leading-7">
-                                <div className="flex gap-4"><span className="text-zinc-600">01</span><span className="text-purple-400">import</span><span> hakam_ai</span></div>
-                                <div className="flex gap-4"><span className="text-zinc-600">02</span><span className="text-zinc-500"># Start scaning repository...</span></div>
-                                <div className="flex gap-4"><span className="text-zinc-600">03</span><span className="text-indigo-400">report</span><span> = hakam_ai.analyze(repo_url=</span><span className="text-emerald-400">"github.com/hakam/core"</span><span>)</span></div>
-                                <div className="flex gap-4"><span className="text-zinc-600">04</span><span className="text-purple-400">if</span><span> report.has_violations:</span></div>
-                                <div className="flex gap-4 bg-red-500/10 border-l-2 border-red-500 -mx-8 px-8"><span className="text-zinc-600">05</span><span>&nbsp;&nbsp;&nbsp;</span><span className="text-red-400">print</span><span>(</span><span className="text-red-400">{'f"Found {report.count} security risks"'}</span><span>)</span></div>
-                                <div className="flex gap-4"><span className="text-zinc-600">06</span><span>&nbsp;&nbsp;&nbsp;hakam_ai.block_merge()</span></div>
-                                <div className="mt-4 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs">
-                                    <span className="text-indigo-400 font-bold block mb-1">Hakam Suggestion:</span>
-                                    Detected suspicious SQL injection pattern in line 42. Consider using prepared statements.
+                            <div className="p-6 font-mono text-sm leading-7 relative">
+                                <div className="flex gap-4"><span className="text-zinc-600 select-none">12</span><span className="text-purple-400">class</span><span className="text-yellow-200"> CheckoutController</span><span> {'{'}</span></div>
+                                <div className="flex gap-4"><span className="text-zinc-600 select-none">13</span><span>&nbsp;&nbsp;<span className="text-purple-400">async</span> process(req) {'{'}</span></div>
+                                {/* Violation Line */}
+                                <div className="flex gap-4 bg-red-500/10 border-l-2 border-red-500 -mx-6 px-6 relative">
+                                    <span className="text-zinc-600 select-none">14</span>
+                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-indigo-300">const</span> user = <span className="text-blue-400">await</span> db.query(<span className="text-emerald-400">"SELECT * FROM users..."</span>);</span>
+                                    {/* Pulse Indicator */}
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                    </span>
+                                </div>
+                                <div className="flex gap-4"><span className="text-zinc-600 select-none">15</span><span>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-zinc-500">// ... business logic</span></span></div>
+                                <div className="flex gap-4"><span className="text-zinc-600 select-none">16</span><span>&nbsp;&nbsp;{'}'}</span></div>
+                                <div className="flex gap-4"><span className="text-zinc-600 select-none">17</span><span>{'}'}</span></div>
+
+                                {/* Hakam Smart Review Card */}
+                                <div className="mt-6 rounded-xl bg-[#1a1b26] border border-indigo-500/30 overflow-hidden shadow-2xl relative z-10 transition-transform hover:scale-[1.02] duration-300">
+                                    <div className="bg-indigo-500/10 px-4 py-2 border-b border-indigo-500/10 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-5 h-5 rounded-md bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">H</div>
+                                            <span className="text-xs font-bold text-indigo-300">Hakam AI Review</span>
+                                        </div>
+                                        <span className="text-[10px] text-zinc-500">Just now</span>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="flex items-start gap-3 mb-3">
+                                            <div className="mt-0.5 text-red-400">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-white text-xs font-bold mb-1">Policy Violation: Clean Architecture</p>
+                                                <p className="text-zinc-400 text-xs leading-relaxed">Direct database queries are forbidden in Controllers. Please move this logic to the Service layer.</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Learning Suggestion */}
+                                        <div className="bg-indigo-500/5 rounded-lg p-3 border border-indigo-500/10">
+                                            <p className="text-[10px] uppercase font-bold text-indigo-400 mb-2 flex items-center gap-1">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" /></svg>
+                                                Recommended Learning
+                                            </p>
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-12 bg-zinc-800 rounded flex items-center justify-center text-[10px] text-zinc-500">Video</div>
+                                                <div>
+                                                    <p className="text-xs text-white font-medium hover:text-indigo-400 cursor-pointer transition-colors">Separation of Concerns Pattern</p>
+                                                    <p className="text-[10px] text-zinc-500">Module 3 • 12 min watch</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -71,11 +113,11 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[
                             { title: "Automated Analysis", desc: "Instantly detect logic errors, memory leaks, and performance bottlenecks using context-aware AI.", icon: "🤖" },
-                            { title: "Custom Policies", desc: "Enforce your team's specific coding standards with easy-to-define policy categories.", icon: "📜" },
+                            { title: "Custom Policies", desc: "Enforce your specific coding standards (up to unlimited rules on Business plan).", icon: "📜" },
                             { title: "VCS Integration", desc: "Native support for GitHub, GitLab, and Bitbucket. Setup takes less than 60 seconds.", icon: "🔌" },
                             { title: "Security Scans", desc: "Automatically identify leaked secrets, SQL injection, and vulnerable dependencies.", icon: "🛡️" },
-                            { title: "Inline Comments", desc: "Receive feedback directly on your Pull Requests where developers are already working.", icon: "💬" },
-                            { title: "Team Insights", desc: "Track code quality trends and policy adoption across your entire organization.", icon: "📊" },
+                            { title: "Team Improvements", desc: "Unlock collaborative insights and velocity metrics designed to make your team faster.", icon: "🚀" },
+                            { title: "Deep Insights", desc: "Track code quality trends and policy adoption across your entire organization.", icon: "📊" },
                         ].map((f, i) => (
                             <div key={i} className="p-8 rounded-[24px] bg-white/5 border border-white/10 hover:border-indigo-500/50 transition-all duration-300 group">
                                 <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-3xl mb-8 group-hover:bg-indigo-500 group-hover:scale-110 transition-all duration-500">{f.icon}</div>
@@ -91,23 +133,50 @@ export default function Home() {
             <section id="pricing" className="py-32 container mx-auto px-6">
                 <div className="text-center mb-20">
                     <h2 className="text-3xl sm:text-5xl font-bold mb-6 tracking-tight">Simple Pricing for <span className="text-gradient">Every Team.</span></h2>
-                    <p className="text-[var(--fg-muted)] max-w-2xl mx-auto text-lg">Start for free and scale as your team grows.</p>
+                    <p className="text-[var(--fg-muted)] max-w-2xl mx-auto text-lg">All plans include a 7-day free trial. Cancel anytime.</p>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     {[
-                        { name: "Starter", price: "0", features: ["1 Active Repo", "Standard Analysis", "Community Support"], active: false },
-                        { name: "Pro", price: "29", features: ["10 Active Repos", "Deep AI Insights", "Priority Support", "Custom Policies"], active: true },
-                        { name: "Enterprise", price: "99", features: ["Unlimited Repos", "Self-Hosted Options", "SSO & Audit Logs", "Dedicated account manager"], active: false },
+                        {
+                            name: "Starter",
+                            price: "29",
+                            repos: "3 Repositories",
+                            features: ["Basic Reports", "Community Support", "Standard Policies"],
+                            active: false
+                        },
+                        {
+                            name: "Team",
+                            price: "79",
+                            repos: "10 Repositories",
+                            features: ["Advanced Reports", "Custom Policies 5x", "Team Improvements", "Priority Support"],
+                            active: true
+                        },
+                        {
+                            name: "Business",
+                            price: "149",
+                            repos: "30 Repositories",
+                            features: ["Advanced Reports", "Unlimited Custom Policies", "Team Improvements", "Dedicated Support"],
+                            active: false
+                        },
                     ].map((plan, i) => (
-                        <div key={i} className={`p-10 rounded-[32px] border ${plan.active ? 'border-indigo-500 bg-indigo-500/5 ring-4 ring-indigo-500/10' : 'border-[var(--border)] bg-transparent'} flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden`}>
+                        <div key={i} className={`p-10 rounded-[32px] border ${plan.active ? 'border-indigo-500 bg-indigo-500/5 ring-4 ring-indigo-500/10 scale-105 z-10' : 'border-[var(--border)] bg-transparent'} flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden`}>
                             {plan.active && <div className="absolute top-0 right-0 bg-indigo-500 text-white px-6 py-1 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl">Most Popular</div>}
+
                             <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-zinc-400">{plan.name}</h3>
-                            <div className="flex items-baseline gap-1 mb-8 pt-4">
+                            <div className="flex items-baseline gap-1 mb-2 pt-4">
                                 <span className="text-4xl font-black italic">$</span>
                                 <span className="text-7xl font-black tracking-tighter italic">{plan.price}</span>
                                 <span className="text-[var(--fg-muted)] text-sm">/mo</span>
                             </div>
+                            <div className="mb-8 flex flex-col items-center gap-2">
+                                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wide border border-emerald-500/20">7-Day Free Trial</span>
+                            </div>
+
                             <ul className="flex flex-col gap-6 mb-12 w-full text-sm">
+                                <li className="flex items-center gap-3 text-white font-bold text-base justify-center">
+                                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    {plan.repos}
+                                </li>
                                 {plan.features.map((f, j) => (
                                     <li key={j} className="flex items-center gap-3 text-zinc-300">
                                         <svg className={`w-5 h-5 ${plan.active ? 'text-indigo-400' : 'text-zinc-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
@@ -116,7 +185,7 @@ export default function Home() {
                                 ))}
                             </ul>
                             <Link href="/signup" className={`w-full py-4 rounded-full font-bold transition-all ${plan.active ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/30' : 'border border-zinc-700 hover:bg-white/5'}`}>
-                                Get Started
+                                Start Free Trial
                             </Link>
                         </div>
                     ))}

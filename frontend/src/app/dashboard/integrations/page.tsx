@@ -17,8 +17,9 @@ export default function IntegrationsPage() {
     const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
+    // Status State
+    const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
+
     const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
 
     // Form state
@@ -27,13 +28,21 @@ export default function IntegrationsPage() {
     const [bitbucketUser, setBitbucketUser] = useState("");
     const [bitbucketPassword, setBitbucketPassword] = useState("");
 
+    // Auto-dismiss notification
+    useEffect(() => {
+        if (status.type) {
+            const timer = setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [status]);
+
     const fetchIntegrations = async () => {
         try {
             const response = await axios.get("/api/integrations");
             setIntegrations(response.data);
         } catch (err: any) {
             console.error("Failed to fetch integrations", err);
-            setError("Failed to load integrations. Please try again.");
+            setStatus({ type: 'error', message: "Failed to load integrations. Please try again." });
         } finally {
             setLoading(false);
         }
@@ -54,19 +63,18 @@ export default function IntegrationsPage() {
             return;
         }
 
-        setError(null);
-        setSuccess(null);
+        setStatus({ type: null, message: '' });
 
         try {
             await axios.delete(`/api/integrations/${id}`);
-            setSuccess("Integration deleted successfully.");
+            setStatus({ type: 'success', message: "Integration deleted successfully." });
             // If deleting the one being edited, reset form
             if (editingIntegration?.id === id) {
                 resetForm();
             }
             fetchIntegrations();
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Failed to delete integration.");
+            setStatus({ type: 'error', message: err.response?.data?.detail || "Failed to delete integration." });
         }
     };
 
@@ -77,8 +85,7 @@ export default function IntegrationsPage() {
         setToken("");
         setBitbucketUser("");
         setBitbucketPassword("");
-        setError(null);
-        setSuccess(null);
+        setStatus({ type: null, message: '' });
     };
 
     const resetForm = () => {
@@ -87,15 +94,13 @@ export default function IntegrationsPage() {
         setToken("");
         setBitbucketUser("");
         setBitbucketPassword("");
-        setError(null);
-        setSuccess(null);
+        setStatus({ type: null, message: '' });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
-        setError(null);
-        setSuccess(null);
+        setStatus({ type: null, message: '' });
 
         // For Bitbucket, combine user:pass
         let finalToken = token;
@@ -107,24 +112,39 @@ export default function IntegrationsPage() {
             if (editingIntegration) {
                 // UPDATE
                 await axios.put(`/api/integrations/${editingIntegration.id}`, { token: finalToken });
-                setSuccess("Integration updated successfully!");
                 resetForm();
+                setStatus({ type: 'success', message: "Integration updated successfully!" });
             } else {
                 // CREATE
                 await axios.post("/api/integrations", { provider, token: finalToken });
-                setSuccess("Integration added successfully!");
                 resetForm(); // Reset to defaults
+                setStatus({ type: 'success', message: "Integration added successfully!" });
             }
             fetchIntegrations();
         } catch (err: any) {
-            setError(err.response?.data?.detail || `Failed to ${editingIntegration ? 'update' : 'add'} integration.`);
+            setStatus({ type: 'error', message: err.response?.data?.detail || `Failed to ${editingIntegration ? 'update' : 'add'} integration.` });
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <div className="px-10 py-10">
+        <div className="px-10 py-10 relative">
+            {/* Notification Toast */}
+            {status.type && (
+                <div className={`fixed top-10 right-10 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md border animate-slide-in-right ${status.type === 'success'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                    }`}>
+                    {status.type === 'success' ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                    ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    )}
+                    <span className="font-bold">{status.message}</span>
+                </div>
+            )}
+
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
                 <div>
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Integrations</h1>
@@ -207,18 +227,6 @@ export default function IntegrationsPage() {
                                         required
                                     />
                                     <p className="mt-2 text-[10px] text-zinc-500">Tokens are encrypted and stored securely.</p>
-                                </div>
-                            )}
-
-                            {error && (
-                                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
-                                    {error}
-                                </div>
-                            )}
-
-                            {success && (
-                                <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium">
-                                    {success}
                                 </div>
                             )}
 

@@ -135,6 +135,26 @@ app.post('/providers/:provider/webhooks', async (req: Request, res: Response) =>
     }
 });
 
+// Providers: Validate Token
+app.post('/providers/:provider/validate', async (req: Request, res: Response) => {
+    const { provider } = req.params;
+    const { token } = req.body;
+
+    try {
+        if (provider === 'github') {
+            const result = await github.validateToken(token);
+            res.json(result);
+        } else if (provider === 'bitbucket') {
+            const result = await bitbucket.validateToken(token);
+            res.json(result);
+        } else {
+            res.status(501).json({ error: "Provider not implemented yet" });
+        }
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Hakam MCP Service running on port ${port}`);
 });

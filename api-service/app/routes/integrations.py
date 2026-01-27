@@ -12,6 +12,11 @@ def create_integration(
     db: Session = Depends(database.get_db),
     current_user: models.UserLocal = Depends(security.get_current_user)
 ):
+    # Validate Token via MCP
+    validation = mcp_client.validate_token(integration.provider, integration.token)
+    if not validation.get("valid"):
+        raise HTTPException(status_code=400, detail=validation.get("message", "Invalid token"))
+
     # Encrypt token
     encrypted = security.encrypt_token(integration.token)
     
@@ -41,6 +46,11 @@ def update_integration(
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found or unauthorized")
     
+    # Validate Token via MCP
+    validation = mcp_client.validate_token(integration.provider, integration_update.token)
+    if not validation.get("valid"):
+        raise HTTPException(status_code=400, detail=validation.get("message", "Invalid token"))
+
     # Encrypt new token
     encrypted = security.encrypt_token(integration_update.token)
     integration.token_encrypted = encrypted

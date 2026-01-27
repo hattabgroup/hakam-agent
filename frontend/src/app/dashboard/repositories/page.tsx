@@ -95,6 +95,10 @@ export default function RepositoriesPage() {
     };
 
     const toggleSavedRepo = async (repo: Repository) => {
+        if (!confirm("Are you sure you want to remove this repository? This will disconnect your provider and may affect active reviews and reports.")) {
+            return;
+        }
+
         setTogglingRepoIds(prev => new Set(prev).add(repo.repo_external_id));
         try {
             // Turning it off means deleting it from DB in this refactor
@@ -135,6 +139,13 @@ export default function RepositoriesPage() {
 
         try {
             const isRemoving = savedRepos.some(saved => saved.repo_external_id === repo.repo_external_id);
+            if (isRemoving) {
+                if (!confirm("Are you sure you want to remove this repository? This will disconnect your provider and may affect active reviews and reports.")) {
+                    return;
+                }
+            }
+
+            setTogglingRepoIds(prev => new Set(prev).add(repo.repo_external_id));
             const body = {
                 provider: integration.provider,
                 integration_id: selectedIntegrationId,
@@ -222,13 +233,29 @@ export default function RepositoriesPage() {
                         </a>
                     )}
                     <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => {
+                            if (integrations.length === 0) {
+                                alert("You don't have any valid integrations. Please add one first.");
+                                window.location.href = "/dashboard/integrations";
+                                return;
+                            }
+                            setIsModalOpen(true);
+                        }}
                         disabled={isOverLimit}
                         className={`btn-premium px-6 py-3 text-sm flex items-center gap-2 group ${isOverLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                         Add New Project
                     </button>
+                    {integrations.length === 0 && (
+                        <div className="hidden">
+                            {/* Hidden hint or we can rely on the alert/redirect above. 
+                                 For a better UI, we could use a nice toast or modal, 
+                                 but alert+redirect is effective for now as per user request. 
+                                 The user asked for: "give me message... click here to add new one"
+                              */}
+                        </div>
+                    )}
                 </div>
             </div>
 

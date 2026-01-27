@@ -164,3 +164,63 @@ export async function createWebhook(token: string, repo_full_name: string, webho
         throw new Error(`GitHub API Error: ${error.response?.data?.message || error.message}`);
     }
 }
+
+export async function validateToken(token: string) {
+    console.log(`[MCP] Validating GitHub token...`);
+    try {
+        const response = await axios.get(`${GITHUB_API_URL}/user`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const scopesHeader = response.headers['x-oauth-scopes'];
+        console.log(`[MCP] Token scopes: ${scopesHeader}`);
+
+        const scopes = scopesHeader ? scopesHeader.split(',').map((s: string) => s.trim()) : [];
+
+        // Required scopes logic:
+        // We need:
+        // 1. Repo access: 'repo' (private+public) OR 'public_repo' (public only)
+        // 2. Webhook creation: 'admin:repo_hook' OR 'repo' (since 'repo' includes headers usually, less fine-grained)
+
+        const hasRepo = scopes.includes('repo');
+        const hasPublicRepo = scopes.includes('public_repo');
+        const hasRepoHook = scopes.includes('admin:repo_hook') || scopes.includes('write:repo_hook') || scopes.includes('admin:org_hook');
+
+        const missing = [];
+
+        if (!hasRepo && !hasPublicRepo) {
+            missing.push("repo (or public_repo)");
+        }
+
+        // If they don't have full 'repo' access, they strictly require 'admin:repo_hook' for webhooks
+        // (Full 'repo' access typically implies hook access for the user's repos)
+        if (!hasRepo && !hasRepoHook) {
+            missing.push("admin:repo_hook");
+        }
+
+        if (missing.length > 0) {
+            return {
+                valid: false,
+                message: `Missing required scopes: ${missing.join(', ')}. Please ensure the token has 'repo' (Full control) or 'admin:repo_hook' access.`,
+                scopes: scopes
+            };
+        }
+
+        return {
+            valid: true,
+            username: response.data.login,
+            scopes: scopes
+        };
+    } catch (error: any) {
+        console.error(`[MCP] Token validation failed: ${error.response?.data?.message || error.message}`);
+        // If 401, invalid token
+        if (error.response?.status === 401) {
+            return { valid: false, message: "Invalid Personal Access Token" };
+        }
+        // If 403, might be SSO SAML enforcement or rate limit
+        if (error.response?.status === 403) {
+            return { valid: false, message: `Access Forbidden (403). Ensure SSO is enabled for this token if needed. Message: ${error.response?.data?.message}` };
+        }
+        throw new Error(`GitHub Validation Error: ${error.response?.data?.message || error.message}`);
+    }
+}

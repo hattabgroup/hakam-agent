@@ -52,8 +52,15 @@ def save_repos(
         models.Integration.user_id == current_user.id
     ).first()
     
+    # If integration not found, we only allow disabling/deleting repos
     if not integration:
-        raise HTTPException(status_code=404, detail="Integration not found or unauthorized")
+        # Check if any repo is trying to be enabled
+        for r in repo_create.repos:
+            if r.is_enabled:
+                 raise HTTPException(status_code=404, detail="Integration not found or unauthorized. Cannot enable repository.")
+        
+        # If we are here, it means we are only disabling/deleting. Proceed without integration object.
+        pass
 
     # Check Entitlements
     current_sub = db.query(models.Subscription).filter(models.Subscription.user_id == current_user.id).first()

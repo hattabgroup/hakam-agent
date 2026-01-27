@@ -23,10 +23,14 @@ def publish_review_internal(review: models.Review, db: Session, dry_run: bool = 
 
     if not dry_run:
         # Decrypt token
-        integration = db.query(models.Integration).filter(
-            models.Integration.user_id == review.pull_request.repository.user_id,
-            models.Integration.provider == review.pull_request.repository.provider
-        ).first()
+        # Decrypt token
+        if review.pull_request.repository.integration_id:
+             integration = db.query(models.Integration).filter(models.Integration.id == review.pull_request.repository.integration_id).first()
+        else:
+             integration = db.query(models.Integration).filter(
+                models.Integration.user_id == review.pull_request.repository.user_id,
+                models.Integration.provider == review.pull_request.repository.provider
+            ).first()
         
         if not integration:
             raise Exception("Integration not found for publishing")
@@ -99,13 +103,33 @@ def process_llm_review(review_id: int, user_id: int, db: Session, auto_publish: 
             # Fetch Policies
             policies = session.query(models.PolicyCategory).filter(models.PolicyCategory.user_id == user_id).all()
             
+            # Check for LLM Configuration
+            settings_map = {s.key: s.value for s in settings}
+            if 'llm_api_key' not in settings_map or not settings_map['llm_api_key']:
+                print("LLM API Key not found")
+                review.status = models.ReviewStatus.FAILED
+                review.summary = "You don't have any LLM integration configured. Please configure an AI provider in the [Settings Page](/dashboard/settings)."
+                session.commit()
+                return
+
             # Fetch Diff
             # We need the token
             repo = review.pull_request.repository
-            integration = session.query(models.Integration).filter(
-                models.Integration.user_id == user_id, 
-                models.Integration.provider == repo.provider
-            ).first()
+            
+            # Use specific integration ID if available
+            if repo.integration_id:
+                print(f"[Debug] Using specific integration_id: {repo.integration_id}")
+                integration = session.query(models.Integration).filter(models.Integration.id == repo.integration_id).first()
+            else:
+                # Fallback (Legacy)
+                print(f"[Debug] Fallback to user_id {user_id} + provider {repo.provider}")
+                integration = session.query(models.Integration).filter(
+                    models.Integration.user_id == user_id, 
+                    models.Integration.provider == repo.provider
+                ).first()
+            
+            if integration:
+                print(f"[Debug] Integration Found: ID={integration.id}, Provider={integration.provider}, User={integration.user_id}")
             
             if not integration:
                 print("Integration not found")

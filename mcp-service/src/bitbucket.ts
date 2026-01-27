@@ -80,8 +80,12 @@ export async function getPrDetails(token: string, repo_full_name: string, pr_num
 export async function getPrDiff(token: string, repo_full_name: string, pr_number: string) {
     try {
         const authHeader = getAuthHeader(token);
+        const url = `${API_URL}/repositories/${repo_full_name}/pullrequests/${pr_number}/diff`;
+        console.log(`[MCP] Bitbucket getPrDiff: ${url}`);
+        console.log(`[MCP] Auth Type: ${authHeader.split(' ')[0]}`); // Log 'Basic' or 'Bearer'
+
         // Bitbucket diff endpoint: /repositories/{workspace}/{repo_slug}/pullrequests/{pull_request_id}/diff
-        const response = await axios.get(`${API_URL}/repositories/${repo_full_name}/pullrequests/${pr_number}/diff`, {
+        const response = await axios.get(url, {
             headers: {
                 'Authorization': authHeader,
                 // Bitbucket returns raw diff text
@@ -224,5 +228,41 @@ export async function createWebhook(token: string, repo_full_name: string, webho
     } catch (error: any) {
         console.error('Bitbucket createWebhook error:', error.response?.data || error.message);
         throw new Error(`Failed to create Bitbucket webhook: ${error.message}`);
+    }
+}
+
+export async function validateToken(token: string) {
+    console.log(`[MCP] Validating Bitbucket token...`);
+    try {
+        const authHeader = getAuthHeader(token);
+        // Check "read" access by listing repos (limit 1 for speed)
+        await axios.get(`${API_URL}/repositories?role=member&pagelen=1`, {
+            headers: {
+                'Authorization': authHeader,
+                'Accept': 'application/json'
+            }
+        });
+
+        // Check "user" info
+        const userResponse = await axios.get(`${API_URL}/user`, {
+            headers: { Authorization: authHeader }
+        });
+
+        // We can't easily check "write" permissions for comments/webhooks without trying to create them.
+        // But successful authentication and repo list usually implies basic validity.
+        // Bitbucket App Passwords permissions are opaque via API.
+
+        return {
+            valid: true,
+            username: userResponse.data.display_name,
+            scopes: ["read"] // inferred
+        };
+
+    } catch (error: any) {
+        console.error(`[MCP] Token validation failed: ${error.response?.data?.error?.message || error.message}`);
+        if (error.response?.status === 401) {
+            return { valid: false, message: "Invalid App Password or Username" };
+        }
+        throw new Error(`Bitbucket Validation Error: ${error.response?.data?.error?.message || error.message}`);
     }
 }

@@ -33,7 +33,7 @@ const PLANS: Plan[] = [
         name: 'Team',
         price: 79,
         repos: 10,
-        features: ['10 Repositories', 'Advanced Reports', 'Priority Support', 'Team Features'],
+        features: ['10 Repositories', 'Advanced Reports', 'Custom Policies 5x', 'ُTeam Improvements', 'Priority Support'],
         discountPercent: 20
     },
     {
@@ -43,7 +43,7 @@ const PLANS: Plan[] = [
         name: 'Business',
         price: 149,
         repos: 30,
-        features: ['30 Repositories', 'Custom Policies', 'Dedicated Support', 'SSO', 'Audit Logs'],
+        features: ['30 Repositories', 'Advanced Reports', 'Unlimited Custom Policies', 'ُTeam Improvements', 'Dedicated Support'],
         discountPercent: 30
     }
 ];
@@ -57,7 +57,7 @@ export default function PricingTable({
 }) {
     // Default select the middle plan or the next upgrade
     const [selectedPlanId, setSelectedPlanId] = useState<string>('team');
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
     const [extraRepos, setExtraRepos] = useState(0);
     const extraRepoPrice = 5;
 
@@ -159,6 +159,18 @@ export default function PricingTable({
                                     </span>
                                 )}
                             </div>
+
+                            {!isCurrentPlan && (
+                                <div className="mb-6 flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-zinc-300 uppercase tracking-wide">
+                                        <svg className="w-3 h-3 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
+                                        7-Day Free Trial
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-zinc-300 uppercase tracking-wide">
+                                        Cancel Anytime
+                                    </span>
+                                </div>
+                            )}
 
                             <ul className="space-y-3 mb-8">
                                 <li className="flex items-center gap-3 text-sm text-zinc-300">
