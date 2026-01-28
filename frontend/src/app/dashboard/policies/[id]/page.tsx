@@ -28,6 +28,19 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
     const [isLoading, setIsLoading] = useState(true);
     const [isAddingRule, setIsAddingRule] = useState(false);
 
+    const [editingRule, setEditingRule] = useState<Rule | null>(null);
+
+    // Status State
+    const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
+
+    // Auto-dismiss notification
+    useEffect(() => {
+        if (status.type) {
+            const timer = setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [status]);
+
     // New Rule State
     const [newRule, setNewRule] = useState({
         name: "",
@@ -77,6 +90,7 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
             }
         } catch (error) {
             console.error("Failed to fetch category:", error);
+            setStatus({ type: 'error', message: "Failed to load category." });
         } finally {
             setIsLoading(false);
         }
@@ -97,9 +111,11 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
             });
             if (response.ok) {
                 fetchCategory();
+                setStatus({ type: 'success', message: `Rule ${rule.enabled ? 'disabled' : 'enabled'} successfully.` });
             }
         } catch (error) {
             console.error("Failed to toggle rule:", error);
+            setStatus({ type: 'error', message: "Failed to update rule status." });
         }
     };
 
@@ -111,30 +127,61 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
             });
             if (response.ok) {
                 fetchCategory();
+                setStatus({ type: 'success', message: "Rule deleted successfully." });
             }
         } catch (error) {
             console.error("Failed to delete rule:", error);
+            setStatus({ type: 'error', message: "Failed to delete rule." });
         }
     };
 
-    const handleCreateRule = async (e: React.FormEvent) => {
+    const handleEditClick = (rule: Rule) => {
+        setEditingRule(rule);
+        setNewRule({
+            name: rule.name,
+            severity: rule.severity.toString(),
+            rule_text: rule.rule_text,
+            enabled: rule.enabled
+        });
+        setIsAddingRule(true);
+        setStatus({ type: null, message: '' });
+    }
+
+    const handleSaveRule = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch(`/api/policy/categories/${id}/rules`, {
-                method: "POST",
+            let url = `/api/policy/categories/${id}/rules`;
+            let method = "POST";
+            let body: any = {
+                ...newRule,
+                severity: parseInt(newRule.severity)
+            };
+
+            if (editingRule) {
+                url = `/api/policy/rules/${editingRule.id}`;
+                method = "PUT";
+                // For update, we might need all fields or just changed ones.
+                // Assuming backend accepts full object updates.
+                // If endpoint expects only fields to update, this works if backend handles it.
+                body = { ...body, id: editingRule.id };
+            }
+
+            const response = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...newRule,
-                    severity: parseInt(newRule.severity) // Ensure it's sent as int or string, logic handles both but int is cleaner
-                })
+                body: JSON.stringify(body)
             });
+
             if (response.ok) {
                 setIsAddingRule(false);
+                setEditingRule(null);
                 setNewRule({ name: "", severity: "3", rule_text: "", enabled: true });
+                setStatus({ type: 'success', message: editingRule ? "Rule updated successfully." : "Rule created successfully." });
                 fetchCategory();
             }
         } catch (error) {
-            console.error("Failed to create rule:", error);
+            console.error("Failed to save rule:", error);
+            setStatus({ type: 'error', message: "Failed to save rule." });
         }
     };
 
@@ -149,7 +196,21 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
     if (!category) return null;
 
     return (
-        <div className="px-10 py-10">
+        <div className="px-10 py-10 relative">
+            {/* Notification Toast */}
+            {status.type && (
+                <div className={`fixed top-10 right-10 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md border animate-slide-in-right ${status.type === 'success'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                    }`}>
+                    {status.type === 'success' ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                    ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    )}
+                    <span className="font-bold">{status.message}</span>
+                </div>
+            )}
             <div className="mb-12">
                 <Link href="/dashboard/policies" className="text-zinc-500 hover:text-white flex items-center gap-2 mb-6 transition-colors text-sm font-bold uppercase tracking-widest">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -172,7 +233,11 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
 
             {isAddingRule && (
                 <div className="glass p-8 rounded-[32px] border-indigo-500/30 bg-indigo-500/5 mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <form onSubmit={handleCreateRule}>
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-white mb-1">{editingRule ? "Edit Rule" : "Add New Rule"}</h2>
+                        <p className="text-sm text-zinc-500">{editingRule ? "Update the rule details below." : "Define a new rule for this category."}</p>
+                    </div>
+                    <form onSubmit={handleSaveRule}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Rule Name</label>
@@ -213,7 +278,11 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
                         <div className="flex justify-end gap-3">
                             <button
                                 type="button"
-                                onClick={() => setIsAddingRule(false)}
+                                onClick={() => {
+                                    setIsAddingRule(false);
+                                    setEditingRule(null);
+                                    setNewRule({ name: "", severity: "3", rule_text: "", enabled: true });
+                                }}
                                 className="px-6 py-2.5 rounded-xl border border-white/5 hover:bg-white/5 text-sm font-bold transition-colors"
                             >
                                 Cancel
@@ -222,7 +291,7 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
                                 type="submit"
                                 className="btn-premium px-8 py-2.5 rounded-xl text-sm font-bold"
                             >
-                                Create Rule
+                                {editingRule ? "Update Rule" : "Create Rule"}
                             </button>
                         </div>
                     </form>
@@ -269,7 +338,10 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button className="p-2 rounded-lg bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100">
+                                                <button
+                                                    onClick={() => handleEditClick(rule)}
+                                                    className="p-2 rounded-lg bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+                                                >
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                                                 </button>
                                                 <button
