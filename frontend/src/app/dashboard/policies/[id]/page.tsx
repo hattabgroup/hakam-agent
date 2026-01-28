@@ -125,9 +125,13 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
             const response = await fetch(`/api/policy/rules/${ruleId}`, {
                 method: "DELETE"
             });
+
             if (response.ok) {
                 fetchCategory();
                 setStatus({ type: 'success', message: "Rule deleted successfully." });
+            } else {
+                const errorData = await response.json();
+                setStatus({ type: 'error', message: errorData.detail || "Failed to delete rule." });
             }
         } catch (error) {
             console.error("Failed to delete rule:", error);

@@ -109,9 +109,13 @@ export default function PoliciesPage() {
             const response = await fetch(`/api/policy/categories/${id}`, {
                 method: "DELETE"
             });
+
             if (response.ok) {
                 fetchCategories();
                 setStatus({ type: 'success', message: "Category deleted successfully!" });
+            } else {
+                const errorData = await response.json();
+                setStatus({ type: 'error', message: errorData.detail || "Failed to delete category." });
             }
         } catch (error) {
             console.error("Failed to delete category:", error);
@@ -125,6 +129,57 @@ export default function PoliciesPage() {
         setEditingCategory(category);
         setNewCategory({ name: category.name, description: category.description });
         setIsModalOpen(true);
+    };
+
+    // Template Import State
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importStatus, setImportStatus] = useState<string>("");
+    const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+    const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (isImportModalOpen) {
+            // Fetch templates
+            fetch("/api/policy/templates")
+                .then(res => res.json())
+                .then(data => setAvailableTemplates(data))
+                .catch(err => console.error("Failed to fetch templates", err));
+        }
+    }, [isImportModalOpen]);
+
+    const handleImportTemplates = async () => {
+        setImportStatus("Importing...");
+        try {
+            const response = await fetch("/api/policy/templates/import", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ template_ids: selectedTemplates })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setStatus({ type: 'success', message: data.message });
+                setIsImportModalOpen(false);
+                setSelectedTemplates([]);
+                setImportStatus("");
+                fetchCategories(); // Refresh list
+            } else {
+                setStatus({ type: 'error', message: "Failed to import templates." });
+                setImportStatus("");
+            }
+        } catch (error) {
+            console.error(error);
+            setStatus({ type: 'error', message: "Error importing templates." });
+            setImportStatus("");
+        }
+    };
+
+    const toggleTemplateSelection = (id: string) => {
+        if (selectedTemplates.includes(id)) {
+            setSelectedTemplates(selectedTemplates.filter(t => t !== id));
+        } else {
+            setSelectedTemplates([...selectedTemplates, id]);
+        }
     };
 
     return (
@@ -150,6 +205,13 @@ export default function PoliciesPage() {
                 </div>
                 <div className="flex gap-4">
                     <button
+                        onClick={() => setIsImportModalOpen(true)}
+                        className="btn-secondary px-6 py-2.5 text-sm flex items-center gap-2"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                        Import Templates
+                    </button>
+                    <button
                         onClick={() => {
                             setEditingCategory(null);
                             setNewCategory({ name: "", description: "" });
@@ -174,16 +236,24 @@ export default function PoliciesPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">No categories yet</h3>
                     <p className="text-zinc-500 mb-8 max-w-md mx-auto">Start by creating your first policy category to organize your review rules.</p>
-                    <button
-                        onClick={() => {
-                            setEditingCategory(null);
-                            setNewCategory({ name: "", description: "" });
-                            setIsModalOpen(true);
-                        }}
-                        className="btn-outline px-8 py-3 rounded-2xl"
-                    >
-                        Create Your First Category
-                    </button>
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="btn-secondary px-8 py-3 rounded-2xl"
+                        >
+                            Import Templates
+                        </button>
+                        <button
+                            onClick={() => {
+                                setEditingCategory(null);
+                                setNewCategory({ name: "", description: "" });
+                                setIsModalOpen(true);
+                            }}
+                            className="btn-premium px-8 py-3 rounded-2xl"
+                        >
+                            Create Your First Category
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -233,6 +303,66 @@ export default function PoliciesPage() {
                     ))}
                 </div>
             )}
+
+            {/* Import Template Modal */}
+            <Modal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                title="Import Policy Templates"
+                maxWidth="max-w-2xl"
+            >
+                <div className="space-y-6">
+                    <p className="text-zinc-400 text-sm">Select templates to import. These will create new categories and populate them with industry-standard rules.</p>
+
+                    <div className="space-y-3">
+                        {availableTemplates.map(tmpl => (
+                            <label key={tmpl.id} className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${selectedTemplates.includes(tmpl.id)
+                                ? 'bg-indigo-500/10 border-indigo-500/50'
+                                : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                }`}>
+                                <input
+                                    type="checkbox"
+                                    className="mt-1 w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-800"
+                                    checked={selectedTemplates.includes(tmpl.id)}
+                                    onChange={() => toggleTemplateSelection(tmpl.id)}
+                                />
+                                <div>
+                                    <h4 className="text-white font-bold mb-1">{tmpl.name}</h4>
+                                    <p className="text-zinc-500 text-sm mb-2">{tmpl.description}</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {tmpl.rules.slice(0, 3).map((r: any, idx: number) => (
+                                            <span key={idx} className="px-2 py-0.5 rounded text-[10px] bg-white/10 text-zinc-400 border border-white/5">
+                                                {r.name}
+                                            </span>
+                                        ))}
+                                        {tmpl.rules.length > 3 && (
+                                            <span className="px-2 py-0.5 rounded text-[10px] bg-white/5 text-zinc-500 border border-white/5">
+                                                +{tmpl.rules.length - 3} more
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                        <button
+                            onClick={() => setIsImportModalOpen(false)}
+                            className="px-6 py-2.5 rounded-xl border border-white/5 hover:bg-white/5 text-sm font-bold transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleImportTemplates}
+                            disabled={selectedTemplates.length === 0 || !!importStatus}
+                            className="btn-premium px-8 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50"
+                        >
+                            {importStatus || `Import ${selectedTemplates.length > 0 ? `(${selectedTemplates.length})` : ''}`}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             <Modal
                 isOpen={isModalOpen}

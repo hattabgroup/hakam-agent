@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Union
 from pydantic import BaseModel
 from .. import security, models, database
 
 router = APIRouter(prefix="/policy", tags=["policies"])
+
+# ... (Schemas omitted for brevity, they remain unchanged) ...
 
 # Schemas
 class RuleCreate(BaseModel):
@@ -60,8 +63,15 @@ def delete_category(cat_id: int, db: Session = Depends(database.get_db), current
     if not db_cat:
         raise HTTPException(status_code=404, detail="Category not found")
     
-    db.delete(db_cat)
-    db.commit()
+    try:
+        db.delete(db_cat)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete this category because it is referenced by existing review violations. Please disable the rules within it instead."
+        )
     return {"message": "Category deleted"}
 
 @router.get("/categories/{cat_id}/rules", response_model=List[RuleResponse])
@@ -137,6 +147,13 @@ def delete_rule(rule_id: int, db: Session = Depends(database.get_db), current_us
     if not db_rule:
         raise HTTPException(status_code=404, detail="Rule not found")
     
-    db.delete(db_rule)
-    db.commit()
+    try:
+        db.delete(db_rule)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete this rule because it is referenced by existing review violations. Please delete the associated reviews first, or disable the rule instead."
+        )
     return {"message": "Rule deleted"}

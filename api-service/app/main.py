@@ -114,6 +114,8 @@ from .routes import reports
 app.include_router(reports.router)
 from .routes import billing
 app.include_router(billing.router)
+from .routes import templates
+app.include_router(templates.router)
 
 @app.get("/health")
 def health_check():
