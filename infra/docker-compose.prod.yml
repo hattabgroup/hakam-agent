@@ -46,6 +46,12 @@ services:
       DATABASE_URL: mysql+pymysql://${MYSQL_USER:-hakam_user}:${MYSQL_PASSWORD:-hakam_password}@${MYSQL_HOST:-db}/${MYSQL_DATABASE:-hakam_db}
       JWT_SECRET: ${JWT_SECRET:-supersecretkeyForPhase2DevelopmentOnly}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ZEPTOMAIL_SMTP_HOST: ${ZEPTOMAIL_SMTP_HOST}
+      ZEPTOMAIL_SMTP_PORT: ${ZEPTOMAIL_SMTP_PORT}
+      ZEPTOMAIL_USERNAME: ${ZEPTOMAIL_USERNAME}
+      ZEPTOMAIL_PASSWORD: ${ZEPTOMAIL_PASSWORD}
+      ZEPTOMAIL_FROM_EMAIL: ${ZEPTOMAIL_FROM_EMAIL}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy
