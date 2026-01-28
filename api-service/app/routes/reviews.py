@@ -157,17 +157,46 @@ def process_llm_review(review_id: int, user_id: int, db: Session, auto_publish: 
             
             # Save Results
             for v in violations:
-                 # Map logic similar to submit_result
+                 # Robust Matching Logic
                  cat_id = None
                  rule_id = None
                  
+                 # 1. Try finding Category (Case-Insensitive)
                  if v.category:
-                     cat = session.query(models.PolicyCategory).filter(models.PolicyCategory.user_id == user_id, models.PolicyCategory.name == v.category).first()
-                     if cat: cat_id = cat.id
+                     # Fetch all categories for user to compare locally or query with ILIKE/filter
+                     # Using python loop for flexibility with normalization
+                     user_cats = session.query(models.PolicyCategory).filter(models.PolicyCategory.user_id == user_id).all()
+                     normalized_v_cat = v.category.strip().lower()
+                     
+                     matched_cat = next((c for c in user_cats if c.name.strip().lower() == normalized_v_cat), None)
+                     if matched_cat:
+                         cat_id = matched_cat.id
                  
-                 if v.rule_name and cat_id:
-                     rule = session.query(models.PolicyRule).filter(models.PolicyRule.category_id == cat_id, models.PolicyRule.name == v.rule_name).first()
-                     if rule: rule_id = rule.id
+                 # 2. Try finding Rule
+                 # If we have a category, look inside it. 
+                 # If we don't (or matching failed), look across ALL rules for this user? 
+                 # Or just rely on rule name unique-ish-ness? 
+                 # Let's try looking within the matched category first.
+                 
+                 if v.rule_name:
+                     normalized_v_rule = v.rule_name.strip().lower()
+                     
+                     if cat_id:
+                         # Look in specific category
+                         cat_rules = session.query(models.PolicyRule).filter(models.PolicyRule.category_id == cat_id).all()
+                         matched_rule = next((r for r in cat_rules if r.name.strip().lower() == normalized_v_rule), None)
+                         if matched_rule:
+                             rule_id = matched_rule.id
+                     else:
+                         # Fallback: Look across ALL rules for this user's categories
+                         # This handles cases where LLM gets the category name slightly wrong but Rule name right
+                         all_user_rules = session.query(models.PolicyRule).join(models.PolicyCategory).filter(models.PolicyCategory.user_id == user_id).all()
+                         matched_rule = next((r for r in all_user_rules if r.name.strip().lower() == normalized_v_rule), None)
+                         
+                         if matched_rule:
+                             rule_id = matched_rule.id
+                             cat_id = matched_rule.category_id # Recover category from rule!
+                             print(f"Recovered Category {matched_rule.category.name} from Rule {matched_rule.name}")
 
                  # Severity Map
                  severity_map = {"CRITICAL": 5, "HIGH": 4, "MEDIUM": 3, "WARNING": 3, "LOW": 2, "INFO": 1}

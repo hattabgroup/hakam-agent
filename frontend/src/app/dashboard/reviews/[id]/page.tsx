@@ -337,11 +337,11 @@ export default function ReviewDetailsPage() {
                         <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">Review Stats</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
-                                <div className="text-2xl font-bold text-white mb-1">{violations.filter(v => v.severity === 5).length}</div>
+                                <div className="text-2xl font-bold text-white mb-1">{violations.filter(v => v.severity >= 4).length}</div>
                                 <div className="text-[10px] text-red-400 font-bold uppercase">Critical</div>
                             </div>
                             <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
-                                <div className="text-2xl font-bold text-white mb-1">{violations.filter(v => v.severity === 3).length}</div>
+                                <div className="text-2xl font-bold text-white mb-1">{violations.filter(v => v.severity === 3 || v.severity === 2).length}</div>
                                 <div className="text-[10px] text-amber-400 font-bold uppercase">Warnings</div>
                             </div>
                         </div>
