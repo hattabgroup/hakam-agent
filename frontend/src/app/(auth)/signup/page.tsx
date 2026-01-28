@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
     const { signup } = useAuth();
+    const router = useRouter();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -31,6 +33,7 @@ export default function SignupPage() {
 
         try {
             await signup(email, password);
+            router.push("/verify-email-instruction");
         } catch (err: any) {
             setError(err.message || "Signup failed");
         } finally {

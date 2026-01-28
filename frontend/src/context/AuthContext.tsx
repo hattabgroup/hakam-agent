@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signup = async (email: string, password: string) => {
         try {
             await axios.post("/api/auth/signup", { email, password });
-            await login(email, password);
+            // await login(email, password); // Logic changed: Email verification required
         } catch (error: any) {
             throw new Error(error.response?.data?.detail || "Signup failed");
         }

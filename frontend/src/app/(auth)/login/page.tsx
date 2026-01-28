@@ -15,17 +15,74 @@ function LoginForm() {
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Resend Verification State
+    const [showResend, setShowResend] = useState(false);
+    const [resendStatus, setResendStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
+    const [resendMessage, setResendMessage] = useState("");
+    const [countdown, setCountdown] = useState(0);
+
+    // Countdown timer effect
+    React.useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setShowResend(false);
         setIsSubmitting(true);
 
         try {
             await login(email, password);
         } catch (err: any) {
-            setError(err.message || "Invalid email or password");
+            const msg = err.message || "Invalid email or password";
+            setError(msg);
+
+            // Check if error is related to verification
+            if (msg.includes("verified") || msg.includes("verification")) {
+                setShowResend(true);
+            }
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (countdown > 0) return;
+
+        setResendStatus("loading");
+        setResendMessage("");
+
+        try {
+            // Need to hit the backend directly since AuthContext doesn't expose resend
+            const authUrl = "/api/auth/resend-verification"; // Proxied by Next.js
+            const response = await fetch(authUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                setResendStatus("sent");
+                setResendMessage("Verification email sent! Check your inbox.");
+                setCountdown(60); // Start 60s cooldown
+            } else {
+                const data = await response.json();
+                setResendStatus("error");
+                setResendMessage(data.detail || "Failed to send email. Please try again.");
+                if (response.status === 429) {
+                    setCountdown(60); // Enforce cooldown on UI even if backend rejected
+                }
+            }
+        } catch (err: any) {
+            setResendStatus("error");
+            setResendMessage("Network error. Please try again.");
+        } finally {
+            if (resendStatus !== "sent") setResendStatus("idle");
         }
     };
 
@@ -48,8 +105,26 @@ function LoginForm() {
 
             <form onSubmit={handleSubmit} className="glass p-8 rounded-[32px] border-white/10 shadow-2xl">
                 {error && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
-                        {error}
+                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium flex flex-col gap-2">
+                        <span>{error}</span>
+                        {showResend && (
+                            <div className="pt-2 border-t border-red-500/20 mt-1">
+                                <p className="text-xs text-red-300 mb-2">Did you miss the email?</p>
+                                <button
+                                    type="button"
+                                    onClick={handleResend}
+                                    disabled={countdown > 0}
+                                    className="text-xs font-bold underline hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {countdown > 0 ? `Resend available in ${countdown}s` : "Resend Verification Email"}
+                                </button>
+                                {resendMessage && (
+                                    <p className={`text-xs mt-2 font-bold ${resendStatus === 'sent' ? 'text-emerald-400' : 'text-red-300'}`}>
+                                        {resendMessage}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
