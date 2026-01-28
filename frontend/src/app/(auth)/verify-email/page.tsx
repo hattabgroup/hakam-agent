@@ -19,18 +19,8 @@ export default function VerifyEmailPage({ searchParams }: { searchParams: Promis
 
         const verify = async () => {
             try {
-                // Determine API URL (client-side usually goes through Next.js proxy or directly to service if configured)
-                // Assuming we can hit auth service via configured route or directly.
-                // Since this is a client component, we often use NEXT_PUBLIC_AUTH_URL or similar.
-                const authUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:8001"; // Fallback for dev
-
-                // Note: In docker, browser can't hit 'auth-service:8000'. Needs localhost port or public URL.
-                // Assuming standard setup: we proxy or hit a public API gateway.
-                // For this implementation, we will try to fetch from the API endpoint directly if exposed, 
-                // OR simpler: use a relative path if Next.js rewrites are set up.
-                // Given the project structure, let's assume we need to hit the backend URL directly exposed to client.
-
-                const response = await fetch(`${authUrl}/auth/verify?token=${token}`);
+                // Use relative path to hit Next.js API proxy
+                const response = await fetch(`/api/auth/verify?token=${token}`);
 
                 if (response.ok) {
                     setStatus("success");

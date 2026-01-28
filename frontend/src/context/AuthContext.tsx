@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setUser(null);
 
                     // Only redirect if we are NOT on a public page
-                    const publicPages = ["/", "/login", "/signup"];
+                    const publicPages = ["/", "/login", "/signup", "/verify-email", "/verify-email-instruction"];
                     const currentPath = window.location.pathname;
                     if (!publicPages.includes(currentPath)) {
                         router.push("/login");
