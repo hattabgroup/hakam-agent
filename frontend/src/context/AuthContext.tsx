@@ -12,8 +12,8 @@ interface User {
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (email: string, password: string) => Promise<void>;
-    signup: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
+    signup: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -66,9 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
     }, [router]);
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, recaptchaToken?: string) => {
         try {
-            await axios.post("/api/auth/login", { email, password });
+            await axios.post("/api/auth/login", { email, password, recaptcha_token: recaptchaToken });
             await fetchUser();
             router.push("/dashboard");
         } catch (error: any) {
@@ -76,9 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const signup = async (email: string, password: string) => {
+    const signup = async (email: string, password: string, recaptchaToken?: string) => {
         try {
-            await axios.post("/api/auth/signup", { email, password });
+            await axios.post("/api/auth/signup", { email, password, recaptcha_token: recaptchaToken });
             // await login(email, password); // Logic changed: Email verification required
         } catch (error: any) {
             throw new Error(error.response?.data?.detail || "Signup failed");

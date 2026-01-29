@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useSearchParams } from "next/navigation";
+import ReCAPTCHA from "react-google-recaptcha";
 
 function LoginForm() {
     const { login } = useAuth();
@@ -12,6 +13,8 @@ function LoginForm() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,11 +37,22 @@ function LoginForm() {
         e.preventDefault();
         setError("");
         setShowResend(false);
+
         setIsSubmitting(true);
 
         try {
-            await login(email, password);
+            let token = recaptchaToken;
+            if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !token) {
+                token = await recaptchaRef.current?.executeAsync() as string;
+                setRecaptchaToken(token);
+            }
+
+            await login(email, password, token || undefined);
         } catch (err: any) {
+            // Reset captcha on error so they can try again if needed
+            recaptchaRef.current?.reset();
+            setRecaptchaToken(null);
+
             const msg = err.message || "Invalid email or password";
             setError(msg);
 
@@ -155,6 +169,19 @@ function LoginForm() {
                             placeholder="••••••••"
                         />
                     </div>
+
+                    {/* ReCAPTCHA */}
+                    {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+                        <div className="flex justify-center">
+                            <ReCAPTCHA
+                                ref={recaptchaRef}
+                                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                                size="invisible"
+                                onChange={(token: string | null) => setRecaptchaToken(token)}
+                                theme="dark"
+                            />
+                        </div>
+                    )}
 
                     <button
                         type="submit"

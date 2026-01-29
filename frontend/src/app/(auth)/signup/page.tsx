@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import ReCAPTCHA from "react-google-recaptcha";
 
 export default function SignupPage() {
     const { signup } = useAuth();
@@ -12,6 +13,8 @@ export default function SignupPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,9 +35,17 @@ export default function SignupPage() {
         setIsSubmitting(true);
 
         try {
-            await signup(email, password);
+            let token = recaptchaToken;
+            if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !token) {
+                token = await recaptchaRef.current?.executeAsync() as string;
+                setRecaptchaToken(token);
+            }
+
+            await signup(email, password, token || undefined);
             router.push("/verify-email-instruction");
         } catch (err: any) {
+            recaptchaRef.current?.reset();
+            setRecaptchaToken(null);
             setError(err.message || "Signup failed");
         } finally {
             setIsSubmitting(false);
@@ -99,6 +110,19 @@ export default function SignupPage() {
                                 placeholder="Repeat password"
                             />
                         </div>
+
+                        {/* ReCAPTCHA */}
+                        {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+                            <div className="flex justify-center">
+                                <ReCAPTCHA
+                                    ref={recaptchaRef}
+                                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                                    size="invisible"
+                                    onChange={(token: string | null) => setRecaptchaToken(token)}
+                                    theme="dark"
+                                />
+                            </div>
+                        )}
 
                         <button
                             type="submit"
