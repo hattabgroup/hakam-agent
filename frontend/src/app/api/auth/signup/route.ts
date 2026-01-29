@@ -3,12 +3,13 @@ import axios from "axios";
 
 export async function POST(request: Request) {
     try {
-        const { email, password } = await request.json();
+        const { email, password, recaptcha_token } = await request.json();
         const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://auth-service:8000";
 
         await axios.post(`${authServiceUrl}/auth/signup`, {
             email,
             password,
+            recaptcha_token,
         });
 
         return NextResponse.json({ success: true });

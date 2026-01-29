@@ -4,12 +4,13 @@ import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
     try {
-        const { email, password } = await request.json();
+        const { email, password, recaptcha_token } = await request.json();
         const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://auth-service:8000";
 
         const response = await axios.post(`${authServiceUrl}/auth/login`, {
             email,
             password,
+            recaptcha_token,
         });
 
         const { access_token } = response.data;
