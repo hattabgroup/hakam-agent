@@ -153,7 +153,7 @@ class Subscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("api_users.id"), unique=True, nullable=False)
-    stripe_subscription_id = Column(String(255), unique=True, nullable=False)
+    stripe_subscription_id = Column(String(255), unique=True, nullable=True)
     stripe_customer_id = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False) # active, trialing, past_due, canceled, incomplete
     
@@ -168,6 +168,17 @@ class Subscription(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("UserLocal", back_populates="subscription")
+
+class PromoCode(Base):
+    __tablename__ = "promo_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, index=True, nullable=False)
+    duration_days = Column(Integer, default=7)
+    is_redeemed = Column(Boolean, default=False)
+    redeemed_at = Column(DateTime(timezone=True), nullable=True)
+    redeemed_by_user_id = Column(Integer, ForeignKey("api_users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class WebhookEvent(Base):
     __tablename__ = "webhook_events"

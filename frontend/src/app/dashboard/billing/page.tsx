@@ -88,6 +88,27 @@ export default function BillingPage() {
         }
     };
 
+    const [promoCode, setPromoCode] = useState('');
+
+    const handleRedeem = async () => {
+        if (!promoCode) return;
+        setProcessing(true);
+        try {
+            const res = await axios.post('/api/billing/redeem', {
+                code: promoCode
+            });
+            alert(res.data.message);
+            fetchSubscription();
+            setPromoCode('');
+        } catch (error: any) {
+            console.error("Redeem failed", error);
+            const msg = error.response?.data?.detail || "Failed to redeem code.";
+            alert(msg);
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     if (loading || authLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -168,6 +189,32 @@ export default function BillingPage() {
                     </div>
                 </div>
             ) : null}
+
+            {/* Promo Code Section */}
+            <div className="glass p-8 rounded-[32px] border border-white/10 mt-8 mb-20">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Have a promo code?</h3>
+                        <p className="text-zinc-400">Redeem your code to unlock special offers or extended trials.</p>
+                    </div>
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            placeholder="Enter promo code"
+                            className="flex-1 md:w-64 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
+                        <button
+                            onClick={handleRedeem}
+                            disabled={processing || !promoCode}
+                            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                            Redeem Code
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {/* Always Show Pricing Table for Upgrades or New Subs */}
             <div className="space-y-8 mt-12">

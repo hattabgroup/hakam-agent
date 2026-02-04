@@ -89,6 +89,17 @@ with database.engine.connect() as conn:
     except Exception as e:
         print(f"Auto-migration failed for Severity: {e}")
 
+    # Auto-migration for Promo Codes (Phase 3)
+    try:
+        # Check if stripe_subscription_id is nullable
+        # This is tricky to check in generic SQL without information_schema, but we can just try to MODIFY it.
+        # If it's already nullable, it shouldn't hurt.
+        print("Auto-migrating: Making stripe_subscription_id nullable...")
+        conn.execute(text("ALTER TABLE subscriptions MODIFY COLUMN stripe_subscription_id VARCHAR(255) NULL"))
+        conn.commit()
+    except Exception as e:
+         print(f"Auto-migration failed for stripe_subscription_id nullability: {e}")
+
 app = FastAPI(title="Hakam API Service", version="0.1.0")
 
 from fastapi.middleware.cors import CORSMiddleware
