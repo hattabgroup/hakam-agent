@@ -176,3 +176,6 @@ class EntitlementCheck(BaseModel):
     current_count: int
     limit: int
 
+class PromoCodeRedeemRequest(BaseModel):
+    code: str
+

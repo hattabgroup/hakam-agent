@@ -179,7 +179,7 @@ export default function IntegrationsPage() {
                                     disabled={!!editingIntegration}
                                 >
                                     <option value="github" className="bg-zinc-900">GitHub</option>
-                                    <option value="gitlab" className="bg-zinc-900">GitLab</option>
+                                    {/*<option value="gitlab" className="bg-zinc-900">GitLab</option>*/}
                                     <option value="bitbucket" className="bg-zinc-900">Bitbucket</option>
                                 </select>
                                 {editingIntegration && (

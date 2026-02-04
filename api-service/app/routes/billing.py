@@ -91,43 +91,54 @@ def get_subscription(
     next_bill = None
 
     if sub and sub.status in ["active", "trialing"]:
-        # Self-healing: If date is missing, fetch from Stripe
-        if not sub.current_period_end:
-            try:
-                print(f"Self-healing: Fetching missing data for sub {sub.stripe_subscription_id}")
-                stripe_sub = stripe_service.get_subscription(sub.stripe_subscription_id)
-                sub.current_period_end = datetime.fromtimestamp(stripe_sub.current_period_end)
-                db.commit()
-                db.refresh(sub)
-            except Exception as e:
-                print(f"Self-healing failed: {e}")
-
-        status = sub.status
-        # Determine plan name
-        # We could map price IDs to names, or store it. For now simple mapping:
-        # Ideally this map should be in a service or config
-        prices = entitlements_service.limits
-        # Reverse lookup or just check
-        # For display, we might want "Starter", "Team", etc.
-        # Let's do a simple check
-        if sub.plan_price_id in [entitlements_service.starter_price, entitlements_service.starter_yearly]:
-            plan_name = "Starter"
-        elif sub.plan_price_id in [entitlements_service.team_price, entitlements_service.team_yearly]:
-            plan_name = "Team"
-        elif sub.plan_price_id in [entitlements_service.business_price, entitlements_service.business_yearly]:
-            plan_name = "Business"
-        else:
-            plan_name = "Custom/Unknown"
-            
-        allowed = entitlements_service.get_repo_limit(sub)
-        extra = sub.extra_repos_quantity
-        period_end = sub.current_period_end
-        next_bill = sub.current_period_end # Usually same for renewal
+        # Lazy Expiration Check for Promo Codes
+        # If the subscription is a promo (starts with promo_) and period has passed, expire it.
+        is_promo = str(sub.stripe_subscription_id).startswith("promo_")
+        if is_promo and sub.current_period_end:
+             # Ensure comparison is timezone-naive UTC
+             cpe = sub.current_period_end.replace(tzinfo=None) if sub.current_period_end.tzinfo else sub.current_period_end
+             if cpe < datetime.utcnow():
+                  print(f"Promo '{sub.stripe_subscription_id}' expired. Canceling...")
+                  sub.status = "canceled"
+                  db.commit()
+                  # Continue to return cancelled status
+                  status = "canceled"
+                  # Reset plan_name to Free manually or just let it fall through logic?
+                  # If status is canceled logic below might need adjustment if it depends on 'status' 
+                  # being active to set plan_name.
         
-        if sub.status == "trialing" and sub.trial_end:
-            delta = sub.trial_end.replace(tzinfo=None) - datetime.utcnow()
-            if delta.days >= 0:
-                trial_days = delta.days
+        if sub.status in ["active", "trialing"]:
+            # Self-healing: If date is missing, fetch from Stripe
+            if not sub.current_period_end and not is_promo:
+                try:
+                    print(f"Self-healing: Fetching missing data for sub {sub.stripe_subscription_id}")
+                    stripe_sub = stripe_service.get_subscription(sub.stripe_subscription_id)
+                    sub.current_period_end = datetime.fromtimestamp(stripe_sub.current_period_end)
+                    db.commit()
+                    db.refresh(sub)
+                except Exception as e:
+                    print(f"Self-healing failed: {e}")
+
+            status = sub.status
+            # Determine plan name
+            if sub.plan_price_id in [entitlements_service.starter_price, entitlements_service.starter_yearly]:
+                plan_name = "Starter"
+            elif sub.plan_price_id in [entitlements_service.team_price, entitlements_service.team_yearly]:
+                plan_name = "Team"
+            elif sub.plan_price_id in [entitlements_service.business_price, entitlements_service.business_yearly]:
+                plan_name = "Business"
+            else:
+                plan_name = "Custom/Unknown"
+                
+            allowed = entitlements_service.get_repo_limit(sub)
+            extra = sub.extra_repos_quantity
+            period_end = sub.current_period_end
+            next_bill = sub.current_period_end
+            
+            if sub.status == "trialing" and sub.trial_end:
+                delta = sub.trial_end.replace(tzinfo=None) - datetime.utcnow()
+                if delta.days >= 0:
+                    trial_days = delta.days
     
     # Calculate used repos
     used = db.query(models.Repository).filter(models.Repository.user_id == current_user.id, models.Repository.is_enabled == True).count()
@@ -142,6 +153,58 @@ def get_subscription(
         "extra_repos_quantity": extra,
         "next_bill_date": next_bill
     }
+
+@router.post("/redeem")
+def redeem_promo_code(
+    request: schemas.PromoCodeRedeemRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.UserLocal = Depends(get_current_user)
+):
+    from datetime import timedelta
+    
+    # 1. Validate Promo Code
+    promo = db.query(models.PromoCode).filter(models.PromoCode.code == request.code).first()
+    if not promo:
+        raise HTTPException(status_code=404, detail="Invalid promo code")
+        
+    if promo.is_redeemed:
+        raise HTTPException(status_code=400, detail="Promo code already redeemed")
+        
+    # 2. Mark as Redeemed
+    promo.is_redeemed = True
+    promo.redeemed_at = datetime.utcnow()
+    promo.redeemed_by_user_id = current_user.id
+    
+    # 3. Apply Subscription (Business Tier implementation for trial)
+    duration = timedelta(days=promo.duration_days)
+    new_end_date = datetime.utcnow() + duration
+    
+    # Assign Business Plan for the trial
+    plan_id = entitlements_service.business_price
+    
+    sub = db.query(models.Subscription).filter(models.Subscription.user_id == current_user.id).first()
+    if not sub:
+        # Create new subscription
+        sub = models.Subscription(
+            user_id=current_user.id,
+            stripe_subscription_id=f"promo_{promo.code}",
+            stripe_customer_id=current_user.stripe_customer_id or f"promo_user_{current_user.id}",
+            status="active",
+            current_period_end=new_end_date,
+            plan_price_id=plan_id
+        )
+        db.add(sub)
+    else:
+        # Update existing subscription
+        sub.stripe_subscription_id = f"promo_{promo.code}"
+        sub.status = "active"
+        sub.current_period_end = new_end_date
+        sub.plan_price_id = plan_id
+        sub.cancel_at_period_end = True # Semantically true, it ends after period
+    
+    db.commit()
+    
+    return {"status": "success", "message": f"Promo code redeemed! You have Business access until {new_end_date.strftime('%Y-%m-%d')}"}
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(database.get_db)):
