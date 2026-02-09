@@ -6,6 +6,7 @@ import os
 import hashlib
 import hmac
 import json
+import fnmatch
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -25,6 +26,16 @@ async def verify_github_signature(request: Request):
     
     if not hmac.compare_digest(mac.hexdigest(), signature):
          raise HTTPException(status_code=403, detail="Invalid key")
+
+def is_branch_excluded(branch_name: str, excluded_patterns_str: str) -> bool:
+    if not branch_name or not excluded_patterns_str:
+        return False
+    
+    patterns = [p.strip() for p in excluded_patterns_str.split(",") if p.strip()]
+    for pattern in patterns:
+        if fnmatch.fnmatch(branch_name, pattern):
+            return True
+    return False
 
 @router.post("/{provider}")
 async def handle_webhook(
@@ -50,6 +61,10 @@ async def handle_webhook(
                 pr_number = str(pr_data.get("number"))
                 repo_external_id = str(repo_data.get("id"))
                 
+                # Extract Branches
+                source_branch = pr_data.get("head", {}).get("ref")
+                target_branch = pr_data.get("base", {}).get("ref")
+                
                 # Find Repositories (Fetch ALL matching)
                 repos = db.query(models.Repository).filter(models.Repository.repo_full_name == repo_full_name).all()
                 
@@ -71,6 +86,14 @@ async def handle_webhook(
                 for repo in repos:
                     if not repo.is_enabled:
                         print(f"Repo {repo_full_name} (User {repo.user_id}) is disabled. Skipping.")
+                        continue
+                    
+                    # Check for Excluded Branches
+                    settings = db.query(models.Settings).filter(models.Settings.user_id == repo.user_id, models.Settings.key == "excluded_branches").first()
+                    excluded_branches_str = settings.value if settings else ""
+                    
+                    if is_branch_excluded(source_branch, excluded_branches_str) or is_branch_excluded(target_branch, excluded_branches_str):
+                        print(f"Skipping review for {repo_full_name} PR #{pr_number}. Branch excluded. Source: {source_branch}, Target: {target_branch}, Excluded: {excluded_branches_str}")
                         continue
     
                     # Extract Author
@@ -119,6 +142,10 @@ async def handle_webhook(
              repo_full_name = repo_data.get("full_name")
              pr_number = str(pr_data.get("id"))
              
+             # Extract Branches
+             source_branch = pr_data.get("source", {}).get("branch", {}).get("name")
+             target_branch = pr_data.get("destination", {}).get("branch", {}).get("name")
+             
              print(f"Processing Bitbucket PR: {repo_full_name} #{pr_number}")
              
              # Find Repositories (Fetch ALL matching)
@@ -141,6 +168,14 @@ async def handle_webhook(
              for repo in repos:
                  if not repo.is_enabled:
                      print(f"Repo {repo.repo_full_name} (User {repo.user_id}) is disabled. Skipping.")
+                     continue
+    
+                 # Check for Excluded Branches
+                 settings = db.query(models.Settings).filter(models.Settings.user_id == repo.user_id, models.Settings.key == "excluded_branches").first()
+                 excluded_branches_str = settings.value if settings else ""
+                 
+                 if is_branch_excluded(source_branch, excluded_branches_str) or is_branch_excluded(target_branch, excluded_branches_str):
+                     print(f"Skipping review for {repo_full_name} PR #{pr_number}. Branch excluded. Source: {source_branch}, Target: {target_branch}, Excluded: {excluded_branches_str}")
                      continue
     
                  # Extract Author

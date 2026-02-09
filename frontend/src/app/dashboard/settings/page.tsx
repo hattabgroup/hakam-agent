@@ -17,6 +17,8 @@ export default function SettingsPage() {
     const [provider, setProvider] = useState<string>('openai');
     const [apiKey, setApiKey] = useState<string>('');
     const [model, setModel] = useState<string>('gpt-4o');
+    const [excludedBranches, setExcludedBranches] = useState<string[]>([]);
+    const [branchInput, setBranchInput] = useState('');
 
     useEffect(() => {
         if (!loading && !user) {
@@ -43,6 +45,7 @@ export default function SettingsPage() {
                         if (item.key === 'llm_provider') setProvider(item.value);
                         if (item.key === 'llm_api_key') setApiKey(item.value);
                         if (item.key === 'llm_model') setModel(item.value);
+                        if (item.key === 'excluded_branches') setExcludedBranches(item.value ? item.value.split(',').map(s => s.trim()).filter(Boolean) : []);
                     });
                 }
             } catch (error) {
@@ -66,6 +69,7 @@ export default function SettingsPage() {
             { key: 'llm_provider', value: provider },
             { key: 'llm_api_key', value: apiKey },
             { key: 'llm_model', value: model },
+            { key: 'excluded_branches', value: excludedBranches.join(',') },
         ];
 
         try {
@@ -86,6 +90,24 @@ export default function SettingsPage() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const val = branchInput.trim();
+            if (val && !excludedBranches.includes(val)) {
+                setExcludedBranches([...excludedBranches, val]);
+                setBranchInput('');
+            }
+        } else if (e.key === 'Backspace' && !branchInput && excludedBranches.length > 0) {
+            e.preventDefault();
+            setExcludedBranches(excludedBranches.slice(0, -1));
+        }
+    };
+
+    const removeBranch = (branchToRemove: string) => {
+        setExcludedBranches(excludedBranches.filter(b => b !== branchToRemove));
     };
 
     if (loading || isLoading) {
@@ -177,6 +199,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
+
                         <div>
                             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">API Token</label>
                             <input
@@ -187,6 +210,44 @@ export default function SettingsPage() {
                                 className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-indigo-500/50 transition-colors font-mono"
                             />
                             <p className="mt-2 text-xs text-zinc-600">Your API key is stored securely and encrypted on our servers.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Review Settings Section */}
+                <div className="glass p-8 rounded-[32px] border-white/5 bg-white/5">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-white">Review Scope</h2>
+                            <p className="text-sm text-zinc-500">Manage which branches are excluded from automated reviews.</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Excluded Branches</label>
+                            <div className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus-within:border-indigo-500/50 transition-colors flex flex-wrap gap-2 items-center">
+                                {excludedBranches.map(branch => (
+                                    <span key={branch} className="bg-white/10 text-zinc-300 px-2 py-1 rounded-md text-sm flex items-center gap-1">
+                                        {branch}
+                                        <button type="button" onClick={() => removeBranch(branch)} className="hover:text-white">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                    </span>
+                                ))}
+                                <input
+                                    type="text"
+                                    value={branchInput}
+                                    onChange={(e) => setBranchInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={excludedBranches.length === 0 ? "main, master, release/*" : ""}
+                                    className="bg-transparent border-none outline-none flex-1 min-w-[120px] placeholder:text-zinc-700"
+                                />
+                            </div>
+                            <p className="mt-2 text-xs text-zinc-600">Comma-separated list of branches to exclude. Supports wildcards (e.g. feature/*).</p>
                         </div>
                     </div>
                 </div>
@@ -207,7 +268,7 @@ export default function SettingsPage() {
                         )}
                     </button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 }
