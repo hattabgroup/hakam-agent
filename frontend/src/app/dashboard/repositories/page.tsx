@@ -36,6 +36,7 @@ export default function RepositoriesPage() {
     const [discoveryError, setDiscoveryError] = useState<string | null>(null);
     const [savingLoading, setSavingLoading] = useState(false);
     const [togglingRepoIds, setTogglingRepoIds] = useState<Set<string>>(new Set());
+    const [discoverySearchQuery, setDiscoverySearchQuery] = useState("");
 
     // Subscription State
     const [subDetails, setSubDetails] = useState<any>(null);
@@ -192,6 +193,12 @@ export default function RepositoriesPage() {
             r.repo_full_name.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [savedRepos, searchQuery]);
+
+    const filteredDiscovered = useMemo(() => {
+        return discoveredRepos.filter(r =>
+            r.repo_full_name.toLowerCase().includes(discoverySearchQuery.toLowerCase())
+        );
+    }, [discoveredRepos, discoverySearchQuery]);
 
     const getProviderIcon = (provider: string | undefined) => {
         if (!provider) return null;
@@ -414,10 +421,26 @@ export default function RepositoriesPage() {
 
                     {/* Discovered List */}
                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest pl-1 flex items-center justify-between">
-                            Available Repositories
-                            {discoveredRepos.length > 0 && <span className="text-indigo-400 normal-case tracking-normal">{discoveredRepos.length} found</span>}
-                        </h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest pl-1 flex items-center gap-2">
+                                Available Repositories
+                                {discoveredRepos.length > 0 && <span className="text-indigo-400 normal-case tracking-normal">{discoveredRepos.length} found</span>}
+                            </h3>
+                        </div>
+
+                        {/* Search Input for Discovery */}
+                        {discoveredRepos.length > 0 && (
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search repositories..."
+                                    value={discoverySearchQuery}
+                                    onChange={(e) => setDiscoverySearchQuery(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-11 py-2.5 text-sm text-white outline-none focus:border-indigo-500/50 transition-all"
+                                />
+                                <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                            </div>
+                        )}
 
                         <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {discoveryLoading ? (
@@ -444,8 +467,8 @@ export default function RepositoriesPage() {
                                         Try Again
                                     </button>
                                 </div>
-                            ) : discoveredRepos.length > 0 ? (
-                                discoveredRepos.map((repo) => {
+                            ) : filteredDiscovered.length > 0 ? (
+                                filteredDiscovered.map((repo) => {
                                     const isLinked = repo.is_enabled;
                                     const isToggling = togglingRepoIds.has(repo.repo_external_id);
 
@@ -476,7 +499,7 @@ export default function RepositoriesPage() {
                                 })
                             ) : (
                                 <div className="py-12 text-center text-zinc-500 text-sm italic bg-white/[0.01] rounded-2xl border border-dashed border-white/5">
-                                    Click discover to find projects on your connection.
+                                    {discoveredRepos.length > 0 ? "No repositories match your search." : "Click discover to find projects on your connection."}
                                 </div>
                             )
                             }
