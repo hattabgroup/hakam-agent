@@ -5,11 +5,22 @@ const GITHUB_API_URL = 'https://api.github.com';
 export async function listRepos(token: string) {
     console.log(`[MCP] Listing repos...`);
     try {
-        const response = await axios.get(`${GITHUB_API_URL}/user/repos?per_page=100&sort=created&direction=desc&visibility=all`, {
-            headers: { Authorization: `Bearer ${token}` }
+        let url = `${GITHUB_API_URL}/user/repos?per_page=100&sort=created&direction=desc&visibility=all`;
+        if (token.startsWith('ghs_')) {
+            url = `${GITHUB_API_URL}/installation/repositories?per_page=100`;
+        }
+
+        const response = await axios.get(url, {
+            headers: { 
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
         });
-        console.log(`[MCP] Found ${response.data.length} repos.`);
-        return response.data.map((repo: any) => ({
+
+        const repos = response.data.repositories || response.data;
+        console.log(`[MCP] Found ${repos?.length} repos.`);
+        
+        return repos.map((repo: any) => ({
             repo_external_id: repo.id.toString(),
             repo_full_name: repo.full_name
         }));

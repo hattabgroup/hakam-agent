@@ -21,12 +21,17 @@ export default function IntegrationsPage() {
     const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
     const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
+    const [githubAppUrl, setGithubAppUrl] = useState('');
 
     // Form state
     const [provider, setProvider] = useState("github");
     const [token, setToken] = useState("");
     const [bitbucketUser, setBitbucketUser] = useState("");
     const [bitbucketPassword, setBitbucketPassword] = useState("");
+
+    useEffect(() => {
+        setGithubAppUrl(process.env.NEXT_PUBLIC_GITHUB_APP_URL || '#');
+    }, []);
 
     // Auto-dismiss notification
     useEffect(() => {
@@ -217,16 +222,18 @@ export default function IntegrationsPage() {
                                 </>
                             ) : (
                                 <div className="mb-8">
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Personal Access Token</label>
-                                    <input
-                                        type="password"
-                                        placeholder="ghp_xxxxxxxxxxxx"
-                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                        value={token}
-                                        onChange={(e) => setToken(e.target.value)}
-                                        required
-                                    />
-                                    <p className="mt-2 text-[10px] text-zinc-500">Tokens are encrypted and stored securely.</p>
+                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">GitHub App</label>
+                                    <a
+                                        href={githubAppUrl || '#'}
+                                        onClick={(e) => !githubAppUrl && e.preventDefault()}
+                                        className={`block w-full text-center btn-premium py-4 font-bold transition-colors ${!githubAppUrl
+                                            ? 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
+                                            : 'bg-zinc-800 hover:bg-zinc-700'
+                                            }`}
+                                    >
+                                        {!githubAppUrl ? 'Loading...' : 'Connect with GitHub'}
+                                    </a>
+                                    <p className="mt-2 text-[10px] text-zinc-500">You will be redirected to GitHub to install the Hakam App.</p>
                                 </div>
                             )}
 
