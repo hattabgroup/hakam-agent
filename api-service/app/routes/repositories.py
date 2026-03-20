@@ -36,7 +36,21 @@ def discover_repos(
     # Decrypt token
     token = security.decrypt_token(integration.token_encrypted)
     
+    print(f"[DEBUG] Discover Repos -> Provider: {integration.provider}, Base Token: {token}")
+
+    # If GitHub, exchange the installation ID for an access token
+    if integration.provider == "github":
+        try:
+            from ..services import github_app
+            print(f"[DEBUG] Discover Repos -> Attempting to get installation token for {token}")
+            token = github_app.get_installation_token(token)
+            print(f"[DEBUG] Discover Repos -> Received token starting with: {token[:5]}...")
+        except Exception as e:
+            print(f"[DEBUG] Discover Repos -> GitHub App Token Error: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to authenticate with GitHub App: {e}")
+            
     # Call MCP
+    print(f"[DEBUG] Discover Repos -> Calling MCP with token length {len(token)}")
     repos_data = mcp_client.list_repos(integration.provider, token)
     return repos_data
 
@@ -128,6 +142,11 @@ def save_repos(
             try:
                 # Decrypt token
                 token = security.decrypt_token(integration.token_encrypted)
+                
+                # If GitHub, exchange the installation ID for an access token
+                if r.provider == "github":
+                    from ..services import github_app
+                    token = github_app.get_installation_token(token)
                 
                 # Construct Webhook URL
                 webhook_url = f"{API_BASE_URL}/webhooks/{r.provider.lower()}"

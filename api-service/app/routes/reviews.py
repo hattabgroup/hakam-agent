@@ -6,6 +6,7 @@ from datetime import datetime
 from .. import schemas, security, models, database
 from ..services.mcp_client import mcp_client
 from ..services.llm import LLMService
+from ..services import github_app
 import os
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -35,7 +36,16 @@ def publish_review_internal(review: models.Review, db: Session, dry_run: bool = 
         if not integration:
             raise Exception("Integration not found for publishing")
             
-        token = security.decrypt_token(integration.token_encrypted)
+        
+        if review.pull_request.repository.provider == "github":
+             # For GitHub App, 'token_encrypted' is installation_id
+             installation_id = security.decrypt_token(integration.token_encrypted)
+             try:
+                 token = github_app.get_installation_token(installation_id)
+             except Exception as e:
+                 raise Exception(f"Failed to authenticate with GitHub App: {e}")
+        else:
+            token = security.decrypt_token(integration.token_encrypted)
         
         # Prepare inline comments
         comments = []
@@ -138,7 +148,19 @@ def process_llm_review(review_id: int, user_id: int, db: Session, auto_publish: 
                 session.commit()
                 return
 
-            token = security.decrypt_token(integration.token_encrypted)
+            if repo.provider == "github":
+                # For GitHub App, 'token_encrypted' stores the installation ID
+                installation_id = security.decrypt_token(integration.token_encrypted)
+                try:
+                    token = github_app.get_installation_token(installation_id)
+                except Exception as e:
+                    print(f"Failed to get GitHub App token: {e}")
+                    review.status = models.ReviewStatus.FAILED
+                    review.summary = "Authentication failed. Please reconnect your GitHub integration."
+                    session.commit()
+                    return
+            else:
+                token = security.decrypt_token(integration.token_encrypted)
             
             # Get Diff from MCP
             try:

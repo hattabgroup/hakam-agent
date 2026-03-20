@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import schemas, security, models, database
 from ..services.mcp_client import mcp_client
+from ..services import github_app
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
@@ -12,10 +13,31 @@ def create_integration(
     db: Session = Depends(database.get_db),
     current_user: models.UserLocal = Depends(security.get_current_user)
 ):
-    # Validate Token via MCP
-    validation = mcp_client.validate_token(integration.provider, integration.token)
-    if not validation.get("valid"):
-        raise HTTPException(status_code=400, detail=validation.get("message", "Invalid token"))
+    # Check for existing integration to avoid duplicates
+    existing_integrations = db.query(models.Integration).filter(
+        models.Integration.user_id == current_user.id,
+        models.Integration.provider == integration.provider
+    ).all()
+    
+    for existing in existing_integrations:
+        try:
+            decrypted_token = security.decrypt_token(existing.token_encrypted)
+            if decrypted_token == integration.token:
+                return existing # Already exists, return successful response
+        except:
+            pass
+
+    # Validate Token
+    if integration.provider == "github":
+        # For GitHub, the 'token' field should contain the Installation ID
+        is_valid, token_or_error = github_app.validate_installation(integration.token)
+        if not is_valid:
+             raise HTTPException(status_code=400, detail=f"Invalid GitHub Installation: {token_or_error}")
+    else:
+        # For others (Bitbucket, GitLab), validate via MCP as usual
+        validation = mcp_client.validate_token(integration.provider, integration.token)
+        if not validation.get("valid"):
+            raise HTTPException(status_code=400, detail=validation.get("message", "Invalid token"))
 
     # Encrypt token
     encrypted = security.encrypt_token(integration.token)
@@ -46,10 +68,15 @@ def update_integration(
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found or unauthorized")
     
-    # Validate Token via MCP
-    validation = mcp_client.validate_token(integration.provider, integration_update.token)
-    if not validation.get("valid"):
-        raise HTTPException(status_code=400, detail=validation.get("message", "Invalid token"))
+    # Validate Token
+    if integration.provider == "github":
+        is_valid, token_or_error = github_app.validate_installation(integration_update.token)
+        if not is_valid:
+             raise HTTPException(status_code=400, detail=f"Invalid GitHub Installation: {token_or_error}")
+    else:
+        validation = mcp_client.validate_token(integration.provider, integration_update.token)
+        if not validation.get("valid"):
+            raise HTTPException(status_code=400, detail=validation.get("message", "Invalid token"))
 
     # Encrypt new token
     encrypted = security.encrypt_token(integration_update.token)
