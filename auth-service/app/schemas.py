@@ -20,3 +20,12 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+    recaptcha_token: str | None = None
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+    recaptcha_token: str | None = None

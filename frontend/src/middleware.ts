@@ -17,7 +17,7 @@ export function middleware(request: NextRequest) {
     }
 
     // If user is already logged in, redirect them away from auth pages and homepage
-    const authRoutes = ["/login", "/signup", "/"];
+    const authRoutes = ["/login", "/signup", "/", "/forgot-password", "/reset-password"];
     if (authRoutes.includes(pathname) && token) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -34,6 +34,8 @@ export const config = {
         "/reviews/:path*",
         "/policies/:path*",
         "/login",
-        "/signup"
+        "/signup",
+        "/forgot-password",
+        "/reset-password"
     ],
 };

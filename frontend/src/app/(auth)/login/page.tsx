@@ -10,6 +10,7 @@ function LoginForm() {
     const { login } = useAuth();
     const searchParams = useSearchParams();
     const signupSuccess = searchParams.get("signup_success");
+    const errorParam = searchParams.get("error");
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -23,6 +24,12 @@ function LoginForm() {
     const [resendStatus, setResendStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
     const [resendMessage, setResendMessage] = useState("");
     const [countdown, setCountdown] = useState(0);
+
+    React.useEffect(() => {
+        if (errorParam === "reset_token_invalid") {
+            setError("Invalid or expired reset token");
+        }
+    }, [errorParam]);
 
     // Countdown timer effect
     React.useEffect(() => {
@@ -158,7 +165,7 @@ function LoginForm() {
                     <div>
                         <div className="flex items-center justify-between mb-2 ml-1">
                             <label className="text-sm font-medium text-zinc-400">Password</label>
-                            <Link href="#" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Forgot password?</Link>
+                            <Link href="/forgot-password" virtual-link-id="forgot-password-link" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Forgot password?</Link>
                         </div>
                         <input
                             type="password"
