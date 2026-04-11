@@ -130,3 +130,83 @@ def resend_verification(
     background_tasks.add_task(email_service.send_verification_email, user.email, verification_token)
     
     return {"message": "Verification email sent."}
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: schemas.ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(database.get_db)
+):
+    # Verify reCAPTCHA
+    await recaptcha.verify_recaptcha(request.recaptcha_token)
+    
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    
+    # Security: Always return success to prevent email enumeration
+    if not user:
+        return {"message": "If an account exists with this email, you will receive a password reset link shortly."}
+    
+    # Generate reset token
+    reset_token = secrets.token_urlsafe(32)
+    user.reset_password_token = reset_token
+    user.reset_password_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    db.commit()
+    
+    # Send email in background
+    background_tasks.add_task(email_service.send_password_reset_email, user.email, reset_token)
+    
+    return {"message": "If an account exists with this email, you will receive a password reset link shortly."}
+
+@router.get("/verify-reset-token")
+def verify_reset_token(token: str, db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.reset_password_token == token).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check expiration
+    expires_at = user.reset_password_expires_at
+    if expires_at:
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+        if datetime.now(timezone.utc) > expires_at:
+            user.reset_password_token = None
+            user.reset_password_expires_at = None
+            db.commit()
+            raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    return {"valid": True}
+
+@router.post("/reset-password")
+async def reset_password(
+    request: schemas.ResetPasswordRequest,
+    db: Session = Depends(database.get_db)
+):
+    # Verify reCAPTCHA
+    await recaptcha.verify_recaptcha(request.recaptcha_token)
+    
+    user = db.query(models.User).filter(models.User.reset_password_token == request.token).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check expiration
+    expires_at = user.reset_password_expires_at
+    if expires_at:
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+        if datetime.now(timezone.utc) > expires_at:
+            user.reset_password_token = None
+            user.reset_password_expires_at = None
+            db.commit()
+            raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Update password
+    user.hashed_password = security.get_password_hash(request.new_password)
+    user.reset_password_token = None
+    user.reset_password_expires_at = None
+    db.commit()
+    
+    return {"message": "Password reset successfully. You can now log in with your new password."}
