@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import schemas, security, models, database
 from ..services.mcp_client import mcp_client
-from ..services import github_app
+from ..services import github_app, gitlab as gitlab_service
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
@@ -110,3 +110,41 @@ def delete_integration(
     db.delete(integration)
     db.commit()
     return {"success": True}
+
+@router.get("/gitlab/authorize")
+def gitlab_authorize():
+    """Returns the GitLab authorization URL."""
+    return {"url": gitlab_service.get_authorize_url()}
+
+@router.post("/gitlab/callback")
+def gitlab_callback(
+    request: schemas.GitLabCallbackRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.UserLocal = Depends(security.get_current_user)
+):
+    """Exchanges code for token and creates integration."""
+    token = gitlab_service.exchange_code_for_token(request.code)
+    
+    # Check for existing integration to avoid duplicates
+    existing = db.query(models.Integration).filter(
+        models.Integration.user_id == current_user.id,
+        models.Integration.provider == "gitlab"
+    ).first()
+    
+    encrypted = security.encrypt_token(token)
+    
+    if existing:
+        existing.token_encrypted = encrypted
+        db.commit()
+        db.refresh(existing)
+        return existing
+    
+    new_integration = models.Integration(
+        user_id=current_user.id,
+        provider="gitlab",
+        token_encrypted=encrypted
+    )
+    db.add(new_integration)
+    db.commit()
+    db.refresh(new_integration)
+    return new_integration

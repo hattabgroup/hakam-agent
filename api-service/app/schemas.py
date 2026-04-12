@@ -179,3 +179,6 @@ class EntitlementCheck(BaseModel):
 class PromoCodeRedeemRequest(BaseModel):
     code: str
 
+class GitLabCallbackRequest(BaseModel):
+    code: str
+

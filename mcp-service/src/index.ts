@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import * as github from './github';
 import * as bitbucket from './bitbucket';
+import * as gitlab from './gitlab';
 
 const app = express();
 const port = 8000;
@@ -27,6 +28,9 @@ app.post('/providers/:provider/repos/list', async (req: Request, res: Response) 
         } else if (provider === 'bitbucket') {
             const repos = await bitbucket.listRepos(token);
             res.json({ repos });
+        } else if (provider === 'gitlab') {
+            const repos = await gitlab.listRepos(token);
+            res.json({ repos });
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
         }
@@ -46,6 +50,9 @@ app.post('/providers/:provider/prs/details', async (req: Request, res: Response)
             res.json(result);
         } else if (provider === 'bitbucket') {
             const result = await bitbucket.getPrDetails(token, repo_full_name, pr_number);
+            res.json(result);
+        } else if (provider === 'gitlab') {
+            const result = await gitlab.getPrDetails(token, repo_full_name, pr_number);
             res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
@@ -67,6 +74,9 @@ app.post('/providers/:provider/prs/diff', async (req: Request, res: Response) =>
         } else if (provider === 'bitbucket') {
             const result = await bitbucket.getPrDiff(token, repo_full_name, pr_number);
             res.json(result);
+        } else if (provider === 'gitlab') {
+            const result = await gitlab.getPrDiff(token, repo_full_name, pr_number);
+            res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
         }
@@ -86,6 +96,9 @@ app.post('/providers/:provider/prs/comment', async (req: Request, res: Response)
             res.json(result);
         } else if (provider === 'bitbucket') {
             const result = await bitbucket.createComment(token, repo_full_name, pr_number, body);
+            res.json(result);
+        } else if (provider === 'gitlab') {
+            const result = await gitlab.createComment(token, repo_full_name, pr_number, body);
             res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
@@ -107,6 +120,9 @@ app.post('/providers/:provider/prs/reviews', async (req: Request, res: Response)
         } else if (provider === 'bitbucket') {
             const result = await bitbucket.createPRReview(token, repo_full_name, pr_number, comments, body);
             res.json(result);
+        } else if (provider === 'gitlab') {
+            const result = await gitlab.createPRReview(token, repo_full_name, pr_number, comments, body);
+            res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
         }
@@ -127,6 +143,9 @@ app.post('/providers/:provider/webhooks', async (req: Request, res: Response) =>
         } else if (provider === 'bitbucket') {
             const result = await bitbucket.createWebhook(token, repo_full_name, webhook_url, secret);
             res.json(result);
+        } else if (provider === 'gitlab') {
+            const result = await gitlab.createWebhook(token, repo_full_name, webhook_url, secret);
+            res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });
         }
@@ -146,6 +165,9 @@ app.post('/providers/:provider/validate', async (req: Request, res: Response) =>
             res.json(result);
         } else if (provider === 'bitbucket') {
             const result = await bitbucket.validateToken(token);
+            res.json(result);
+        } else if (provider === 'gitlab') {
+            const result = await gitlab.validateToken(token);
             res.json(result);
         } else {
             res.status(501).json({ error: "Provider not implemented yet" });

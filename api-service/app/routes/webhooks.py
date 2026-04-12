@@ -205,4 +205,86 @@ async def handle_webhook(
                  
              return {"status": "triggered", "count": triggered_count}
              
+             return {"status": "triggered", "count": triggered_count}
+             
+    elif provider == "gitlab":
+        # GitLab uses the X-Gitlab-Token header for verification
+        gitlab_token = request.headers.get("X-Gitlab-Token")
+        if gitlab_token != WEBHOOK_SECRET:
+             print(f"GitLab Webhook Secret Mismatch. Got: {gitlab_token}")
+             raise HTTPException(status_code=403, detail="Invalid secret")
+             
+        payload = await request.json()
+        event = request.headers.get("X-Gitlab-Event")
+        
+        print(f"Received GitLab Event: {event}")
+        
+        if event == "Merge Request Hook":
+            object_attributes = payload.get("object_attributes", {})
+            action = object_attributes.get("action")
+            
+            # GitLab actions for MR: open, update, reopen
+            if action in ["open", "update", "reopen"]:
+                repo_data = payload.get("project", {})
+                repo_full_name = repo_data.get("path_with_namespace")
+                pr_number = str(object_attributes.get("iid"))
+                
+                # Extract Branches
+                source_branch = object_attributes.get("source_branch")
+                target_branch = object_attributes.get("target_branch")
+                
+                print(f"Processing GitLab MR: {repo_full_name} #{pr_number}")
+                
+                # Find Repositories
+                repos = db.query(models.Repository).filter(models.Repository.repo_full_name == repo_full_name).all()
+                
+                if not repos:
+                    # Fallback to case-insensitive
+                    all_repos = db.query(models.Repository).filter(models.Repository.provider == "gitlab").all()
+                    repos = [r for r in all_repos if r.repo_full_name.lower() == repo_full_name.lower()]
+                
+                if not repos:
+                    print(f"Repo {repo_full_name} not found in DB.")
+                    return {"status": "skipped", "reason": "repo_not_found"}
+                    
+                triggered_count = 0
+                for repo in repos:
+                    if not repo.is_enabled:
+                        continue
+                        
+                    # Check for Excluded Branches
+                    settings = db.query(models.Settings).filter(models.Settings.user_id == repo.user_id, models.Settings.key == "excluded_branches").first()
+                    excluded_branches_str = settings.value if settings else ""
+                    
+                    if is_branch_excluded(source_branch, excluded_branches_str) or is_branch_excluded(target_branch, excluded_branches_str):
+                        print(f"Skipping review for {repo_full_name} MR #{pr_number}. Branch excluded.")
+                        continue
+                        
+                    # Extract Author
+                    user_data = payload.get("user", {})
+                    pr_author = user_data.get("name") or user_data.get("username") or "Unknown"
+                    
+                    # Find or Create PR
+                    pr = db.query(models.PullRequest).filter(models.PullRequest.repo_id == repo.id, models.PullRequest.pr_external_id == pr_number).first()
+                    if not pr:
+                        pr = models.PullRequest(repo_id=repo.id, pr_external_id=pr_number, author=pr_author)
+                        db.add(pr)
+                        db.commit()
+                    else:
+                        if not pr.author:
+                            pr.author = pr_author
+                            db.commit()
+                            
+                    # Create Review
+                    review = models.Review(pr_id=pr.id, status=models.ReviewStatus.QUEUED)
+                    db.add(review)
+                    db.commit()
+                    db.refresh(review)
+                    
+                    print(f"Triggering auto-review for GitLab {repo_full_name} MR #{pr_number}")
+                    background_tasks.add_task(process_llm_review, review.id, repo.user_id, db, auto_publish=True)
+                    triggered_count += 1
+                    
+                return {"status": "triggered", "count": triggered_count}
+
     return {"status": "ignored"}
