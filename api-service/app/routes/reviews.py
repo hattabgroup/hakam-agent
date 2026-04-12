@@ -164,7 +164,20 @@ def process_llm_review(review_id: int, user_id: int, db: Session, auto_publish: 
             
             # Get Diff from MCP
             try:
-                diff = mcp_client.get_pr_diff(repo.provider, token, repo.repo_full_name, review.pull_request.pr_external_id)
+                diff_data = mcp_client.get_pr_diff(repo.provider, token, repo.repo_full_name, review.pull_request.pr_external_id)
+                diff = diff_data.get("diff", "")
+                
+                # Diagnostic Logging
+                print(f"[Debug] Fetched diff for {repo.repo_full_name}. Length: {len(diff)}")
+                if diff:
+                    preview = diff[:200] + "..." if len(diff) > 200 else diff
+                    print(f"[Debug] Diff Preview:\n{preview}")
+                else:
+                    print(f"[Warning] Diff is EMPTY for {repo.repo_full_name} PR #{review.pull_request.pr_external_id}")
+                    review.status = models.ReviewStatus.FAILED
+                    review.summary = "Fetched code diff is empty. Please ensure the Merge Request contains changes and the provider is correctly authorized."
+                    session.commit()
+                    return
             except Exception as e:
                  # Fallback/Error if not implemented
                  print(f"mcp_client.get_pr_diff error: {e}")

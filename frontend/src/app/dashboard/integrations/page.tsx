@@ -184,7 +184,7 @@ export default function IntegrationsPage() {
                                     disabled={!!editingIntegration}
                                 >
                                     <option value="github" className="bg-zinc-900">GitHub</option>
-                                    {/*<option value="gitlab" className="bg-zinc-900">GitLab</option>*/}
+                                    <option value="gitlab" className="bg-zinc-900">GitLab</option>
                                     <option value="bitbucket" className="bg-zinc-900">Bitbucket</option>
                                 </select>
                                 {editingIntegration && (
@@ -220,30 +220,53 @@ export default function IntegrationsPage() {
                                         </p>
                                     </div>
                                 </>
-                            ) : (
-                                <div className="mb-8">
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">GitHub App</label>
-                                    <a
-                                        href={githubAppUrl || '#'}
-                                        onClick={(e) => !githubAppUrl && e.preventDefault()}
-                                        className={`block w-full text-center btn-premium py-4 font-bold transition-colors ${!githubAppUrl
-                                            ? 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
-                                            : 'bg-zinc-800 hover:bg-zinc-700'
-                                            }`}
-                                    >
-                                        {!githubAppUrl ? 'Loading...' : 'Connect with GitHub'}
-                                    </a>
-                                    <p className="mt-2 text-[10px] text-zinc-500">You will be redirected to GitHub to install the Hakam App.</p>
-                                </div>
-                            )}
+                             ) : provider === 'gitlab' ? (
+                                    <div className="mb-8">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">GitLab Account</label>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await axios.get('/api/integrations/gitlab/authorize');
+                                                    if (res.data.url) {
+                                                        window.location.href = res.data.url;
+                                                    }
+                                                } catch (err) {
+                                                    setStatus({ type: 'error', message: 'Failed to get GitLab authorization URL.' });
+                                                }
+                                            }}
+                                            className="block w-full text-center btn-premium py-4 font-bold bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border border-orange-600/30 transition-all rounded-2xl"
+                                        >
+                                            Connect with GitLab
+                                        </button>
+                                        <p className="mt-2 text-[10px] text-zinc-500 text-center">You will be redirected to GitLab to authorize Hakam.</p>
+                                    </div>
+                                ) : (
+                                    <div className="mb-8">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">GitHub App</label>
+                                        <a
+                                            href={githubAppUrl || '#'}
+                                            onClick={(e) => !githubAppUrl && e.preventDefault()}
+                                            className={`block w-full text-center btn-premium py-4 font-bold transition-colors ${!githubAppUrl
+                                                ? 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
+                                                : 'bg-zinc-800 hover:bg-zinc-700'
+                                                }`}
+                                        >
+                                            {!githubAppUrl ? 'Loading...' : 'Connect with GitHub'}
+                                        </a>
+                                        <p className="mt-2 text-[10px] text-zinc-500">You will be redirected to GitHub to install the Hakam App.</p>
+                                    </div>
+                                )}
 
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="w-full btn-premium py-4 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {submitting ? (editingIntegration ? "Updating..." : "Connecting...") : (editingIntegration ? "Update Integration" : "Add Integration")}
-                            </button>
+                                {((provider !== 'github' && provider !== 'gitlab') || editingIntegration) && (
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="w-full btn-premium py-4 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {submitting ? (editingIntegration ? "Updating..." : "Connecting...") : (editingIntegration ? "Update Integration" : "Add Integration")}
+                                    </button>
+                                )}
                         </form>
                     </div>
                 </div>
