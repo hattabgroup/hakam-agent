@@ -8,6 +8,10 @@ from fastapi import HTTPException
 GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
 GITHUB_APP_PRIVATE_KEY = os.getenv("GITHUB_APP_PRIVATE_KEY")
 
+# Process the private key to handle escaped newlines if they exist
+if GITHUB_APP_PRIVATE_KEY:
+    GITHUB_APP_PRIVATE_KEY = GITHUB_APP_PRIVATE_KEY.replace("\\n", "\n")
+
 def get_jwt():
     """
     Generates a JWT for the GitHub App.
