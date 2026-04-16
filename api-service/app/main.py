@@ -100,6 +100,17 @@ with database.engine.connect() as conn:
     except Exception as e:
          print(f"Auto-migration failed for stripe_subscription_id nullability: {e}")
 
+    # Auto-migration for Integration Labels
+    try:
+        conn.execute(text("SELECT label FROM integrations LIMIT 1"))
+    except Exception:
+        try:
+            print("Auto-migrating: Adding missing 'label' to integrations table...")
+            conn.execute(text("ALTER TABLE integrations ADD COLUMN label VARCHAR(255) NULL"))
+            conn.commit()
+        except Exception as e:
+            print(f"Auto-migration failed for integrations label: {e}")
+
 app = FastAPI(title="Hakam API Service", version="0.1.0")
 
 from fastapi.middleware.cors import CORSMiddleware

@@ -8,6 +8,7 @@ import axios from "axios";
 interface Integration {
     id: number;
     provider: string;
+    label?: string;
     created_at: string;
 }
 
@@ -26,8 +27,10 @@ export default function IntegrationsPage() {
     // Form state
     const [provider, setProvider] = useState("github");
     const [token, setToken] = useState("");
+    const [label, setLabel] = useState("");
     const [bitbucketUser, setBitbucketUser] = useState("");
     const [bitbucketPassword, setBitbucketPassword] = useState("");
+    const [gitlabMethod, setGitlabMethod] = useState<'oauth' | 'pat' | 'project'>('oauth');
 
     useEffect(() => {
         setGithubAppUrl(process.env.NEXT_PUBLIC_GITHUB_APP_URL || '#');
@@ -86,6 +89,7 @@ export default function IntegrationsPage() {
     const handleEdit = (integration: Integration) => {
         setEditingIntegration(integration);
         setProvider(integration.provider);
+        setLabel(integration.label || "");
         // Clear tokens for security - force user to enter new one if they want to update
         setToken("");
         setBitbucketUser("");
@@ -97,8 +101,10 @@ export default function IntegrationsPage() {
         setEditingIntegration(null);
         setProvider("github"); // Default
         setToken("");
+        setLabel("");
         setBitbucketUser("");
         setBitbucketPassword("");
+        setGitlabMethod('oauth');
         setStatus({ type: null, message: '' });
     };
 
@@ -116,12 +122,12 @@ export default function IntegrationsPage() {
         try {
             if (editingIntegration) {
                 // UPDATE
-                await axios.put(`/api/integrations/${editingIntegration.id}`, { token: finalToken });
+                await axios.put(`/api/integrations/${editingIntegration.id}`, { token: finalToken, label });
                 resetForm();
                 setStatus({ type: 'success', message: "Integration updated successfully!" });
             } else {
                 // CREATE
-                await axios.post("/api/integrations", { provider, token: finalToken });
+                await axios.post("/api/integrations", { provider, token: finalToken, label });
                 resetForm(); // Reset to defaults
                 setStatus({ type: 'success', message: "Integration added successfully!" });
             }
@@ -221,25 +227,149 @@ export default function IntegrationsPage() {
                                     </div>
                                 </>
                              ) : provider === 'gitlab' ? (
-                                    <div className="mb-8">
-                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">GitLab Account</label>
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                try {
-                                                    const res = await axios.get('/api/integrations/gitlab/authorize');
-                                                    if (res.data.url) {
-                                                        window.location.href = res.data.url;
-                                                    }
-                                                } catch (err) {
-                                                    setStatus({ type: 'error', message: 'Failed to get GitLab authorization URL.' });
-                                                }
-                                            }}
-                                            className="block w-full text-center btn-premium py-4 font-bold bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border border-orange-600/30 transition-all rounded-2xl"
-                                        >
-                                            Connect with GitLab
-                                        </button>
-                                        <p className="mt-2 text-[10px] text-zinc-500 text-center">You will be redirected to GitLab to authorize Hakam.</p>
+                                    <div className="mb-6">
+                                        <div className="flex bg-white/5 p-1 rounded-xl mb-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setGitlabMethod('oauth')}
+                                                className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-bold transition-all ${gitlabMethod === 'oauth' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-zinc-500 hover:text-white'}`}
+                                            >
+                                                OAuth
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setGitlabMethod('pat')}
+                                                className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-bold transition-all ${gitlabMethod === 'pat' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-zinc-500 hover:text-white'}`}
+                                            >
+                                                Personal
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setGitlabMethod('project')}
+                                                className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-bold transition-all ${gitlabMethod === 'project' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-zinc-500 hover:text-white'}`}
+                                            >
+                                                Project
+                                            </button>
+                                        </div>
+
+                                        {gitlabMethod === 'oauth' ? (
+                                            <div className="mb-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                                                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">GitLab Account</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const res = await axios.get('/api/integrations/gitlab/authorize');
+                                                            if (res.data.url) {
+                                                                window.location.href = res.data.url;
+                                                            }
+                                                        } catch (err) {
+                                                            setStatus({ type: 'error', message: 'Failed to get GitLab authorization URL.' });
+                                                        }
+                                                    }}
+                                                    className="block w-full text-center btn-premium py-4 font-bold bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border border-orange-600/30 transition-all rounded-2xl"
+                                                >
+                                                    Connect with GitLab
+                                                </button>
+                                                <p className="mt-2 text-[10px] text-zinc-500 text-center">You will be redirected to GitLab to authorize Hakam.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="mb-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                                <div className="mb-4">
+                                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Internal Label</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. Backend Project"
+                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                                        value={label}
+                                                        onChange={(e) => setLabel(e.target.value)}
+                                                        required={gitlabMethod === 'project'}
+                                                    />
+                                                </div>
+
+                                                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                                                    {gitlabMethod === 'pat' ? 'Personal Access Token' : 'Project Access Token'}
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    placeholder={gitlabMethod === 'pat' ? 'glpat-...' : 'glpat-...'}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-4"
+                                                    value={token}
+                                                    onChange={(e) => setToken(e.target.value)}
+                                                    required
+                                                />
+                                                
+                                                {/* Tip Box */}
+                                                <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-4">
+                                                    <div className="flex items-center gap-2 mb-2 text-indigo-400">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Generation Guide</span>
+                                                    </div>
+                                                    
+                                                    {gitlabMethod === 'pat' ? (
+                                                        <>
+                                                            <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
+                                                                Go to <strong>Settings &gt; Access &gt; Personal access tokens</strong>. Click <strong>Generate token</strong> &gt; <strong>Fine-grained token</strong> and select:
+                                                            </p>
+                                                            
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Group & Project Permissions</span>
+                                                                    <div className="grid grid-cols-1 gap-2">
+                                                                        <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                            <span className="text-[10px] font-medium text-zinc-300">Projects</span>
+                                                                            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Project: Read</span>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                            <span className="text-[10px] font-medium text-zinc-300">Repository</span>
+                                                                            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Commit: Read | MR: C, R, U</span>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                            <span className="text-[10px] font-medium text-zinc-300">Integration</span>
+                                                                            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Webhook: All</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">User Permissions</span>
+                                                                    <div className="grid grid-cols-1 gap-2">
+                                                                        <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                            <span className="text-[10px] font-medium text-zinc-300">Projects | Repo</span>
+                                                                            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Project: Read | MR: Read</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
+                                                                Navigate to your repository, then <strong>Settings &gt; Access Tokens</strong>. Click <strong>Add new token</strong> and select:
+                                                            </p>
+                                                            <div className="grid grid-cols-1 gap-2">
+                                                                <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                    <span className="text-[10px] font-medium text-zinc-300">Role</span>
+                                                                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Maintainer</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                    <span className="text-[10px] font-medium text-zinc-300">Projects</span>
+                                                                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Project: Read</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                    <span className="text-[10px] font-medium text-zinc-300">Repository</span>
+                                                                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Commit: Read | MR: C, R, U</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between bg-white/[0.02] px-3 py-2 rounded-lg border border-white/5">
+                                                                    <span className="text-[10px] font-medium text-zinc-300">Integration</span>
+                                                                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter bg-indigo-400/10 px-1.5 py-0.5 rounded">Webhook: All</span>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="mb-8">
@@ -258,7 +388,7 @@ export default function IntegrationsPage() {
                                     </div>
                                 )}
 
-                                {((provider !== 'github' && provider !== 'gitlab') || editingIntegration) && (
+                                {((provider !== 'github' && (provider !== 'gitlab' || gitlabMethod !== 'oauth')) || editingIntegration) && (
                                     <button
                                         type="submit"
                                         disabled={submitting}
@@ -307,7 +437,14 @@ export default function IntegrationsPage() {
                                                 )}
                                             </div>
                                             <div>
-                                                <h4 className="text-lg font-bold text-white capitalize">{integration.provider}</h4>
+                                                <h4 className="text-lg font-bold text-white capitalize">
+                                                    {integration.provider}
+                                                    {integration.label && (
+                                                        <span className="ml-2 px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider align-middle border border-indigo-500/20">
+                                                            {integration.label}
+                                                        </span>
+                                                    )}
+                                                </h4>
                                                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mt-1">
                                                     Added on {new Date(integration.created_at).toLocaleDateString(undefined, {
                                                         year: 'numeric',

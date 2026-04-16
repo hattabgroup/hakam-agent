@@ -209,17 +209,45 @@ export async function createWebhook(token: string, repo_full_name: string, webho
 
 export async function validateToken(token: string) {
     try {
-        const response = await axios.get(`${API_URL}/user`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        return {
-            valid: true,
-            username: response.data.username,
-            scopes: ["api"]
-        };
+        // Try to get user info first (works for OAuth and broad PATs)
+        try {
+            const userResponse = await axios.get(`${API_URL}/user`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return {
+                valid: true,
+                username: userResponse.data.username,
+                scopes: ["api"]
+            };
+        } catch (error: any) {
+            // If 403, it might be a resource-scoped (fine-grained) token
+            if (error.response?.status === 403) {
+                console.log("[MCP] GitLab /user restricted, trying /projects fallback for fine-grained token...");
+                const projectsResponse = await axios.get(`${API_URL}/projects?membership=true&simple=true&per_page=1`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                // If this works, the token is valid for the API even if we can't see the specific user
+                return {
+                    valid: true,
+                    username: "GitLab Token", // Fallback name
+                    scopes: ["api"]
+                };
+            }
+            throw error; // Rethrow other errors
+        }
     } catch (error: any) {
         console.error(`[MCP] GitLab token validation failed: ${error.message}`);
-        return { valid: false, message: "Invalid GitLab Token" };
+        const status = error.response?.status;
+        if (status === 401) {
+            return { valid: false, message: "Invalid or expired GitLab Token" };
+        }
+        if (status === 403) {
+            return { 
+                valid: false, 
+                message: "Permission Denied (403). Ensure the token has 'Project' and 'Merge Request' permissions." 
+            };
+        }
+        return { valid: false, message: `GitLab connection error: ${error.message}` };
     }
 }

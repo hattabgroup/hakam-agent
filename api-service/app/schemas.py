@@ -14,6 +14,7 @@ class User(BaseModel):
 class IntegrationCreate(BaseModel):
     provider: str
     token: str
+    label: Optional[str] = None
 
 class IntegrationUpdate(BaseModel):
     token: str
@@ -21,6 +22,7 @@ class IntegrationUpdate(BaseModel):
 class IntegrationResponse(BaseModel):
     id: int
     provider: str
+    label: Optional[str] = None
     created_at: datetime
     
     class Config:

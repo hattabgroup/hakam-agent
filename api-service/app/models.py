@@ -40,6 +40,7 @@ class Integration(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("api_users.id"), nullable=False)
     provider = Column(String(50), nullable=False) # github, gitlab, bitbucket
+    label = Column(String(255), nullable=True) # User-defined label (e.g. "Project X Token")
     token_encrypted = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
