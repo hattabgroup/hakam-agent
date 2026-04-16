@@ -45,6 +45,7 @@ def create_integration(
     new_integration = models.Integration(
         user_id=current_user.id,
         provider=integration.provider,
+        label=integration.label,
         token_encrypted=encrypted
     )
     db.add(new_integration)
