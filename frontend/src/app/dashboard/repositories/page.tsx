@@ -215,7 +215,8 @@ export default function RepositoriesPage() {
     };
 
     // Derived state for button
-    const isOverLimit = subDetails ? subDetails.used_repos >= subDetails.allowed_repos : false;
+    const isBillingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true';
+    const isOverLimit = isBillingEnabled && subDetails ? subDetails.used_repos >= subDetails.allowed_repos : false;
 
     return (
         <div className="px-10 py-10">
@@ -225,7 +226,7 @@ export default function RepositoriesPage() {
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Active Projects</h1>
                     <div className="flex items-center gap-3">
                         <p className="text-[var(--fg-muted)]">Manage the repositories currently monitored by Hakam.</p>
-                        {subDetails && (
+                        {subDetails && isBillingEnabled && (
                             <span className={`text-xs px-2 py-0.5 rounded border ${isOverLimit ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-zinc-400 border-white/10'}`}>
                                 Usage: {subDetails.used_repos} / {subDetails.allowed_repos}
                             </span>

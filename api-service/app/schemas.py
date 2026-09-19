@@ -172,6 +172,7 @@ class SubscriptionMessage(BaseModel):
     used_repos: int
     extra_repos_quantity: int
     next_bill_date: Optional[datetime]
+    billing_enabled: bool = True
 
 class EntitlementCheck(BaseModel):
     allowed: bool

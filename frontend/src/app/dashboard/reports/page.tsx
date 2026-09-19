@@ -79,13 +79,20 @@ export default function ReportingPage() {
     }, [user, loading, router]);
 
     const checkAccess = async () => {
+        const isBillingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true';
+        if (!isBillingEnabled) {
+            setIsRestricted(false);
+            return;
+        }
+
         try {
             const res = await fetch('/api/billing/subscription');
             if (res.ok) {
                 const sub = await res.json();
-                // Gate if Starter (which has 3 repos limit usually, or check plan name)
-                // Assuming 'Starter' is the name returned by backend
-                // Or better, check allowed_repos < 10 (Team has 10)
+                if (sub.billing_enabled === false) {
+                    setIsRestricted(false);
+                    return;
+                }
                 if (sub.plan_name === 'Starter' || sub.plan_name === 'Free') {
                     setIsRestricted(true);
                 }

@@ -77,6 +77,22 @@ def get_subscription(
     db: Session = Depends(database.get_db),
     current_user: models.UserLocal = Depends(get_current_user)
 ):
+    billing_enabled = entitlements_service.is_billing_enabled()
+    used = db.query(models.Repository).filter(models.Repository.user_id == current_user.id, models.Repository.is_enabled == True).count()
+
+    if not billing_enabled:
+        return {
+            "plan_name": "Community Edition",
+            "status": "active",
+            "trial_days_left": None,
+            "current_period_end": None,
+            "allowed_repos": 999999,
+            "used_repos": used,
+            "extra_repos_quantity": 0,
+            "next_bill_date": None,
+            "billing_enabled": False
+        }
+
     # Fetch subscription from DB
     sub = db.query(models.Subscription).filter(models.Subscription.user_id == current_user.id).first()
     
@@ -86,7 +102,6 @@ def get_subscription(
     trial_days = None
     period_end = None
     allowed = 0
-    used = 0 # Calculate used repos
     extra = 0
     next_bill = None
 
@@ -151,7 +166,8 @@ def get_subscription(
         "allowed_repos": allowed,
         "used_repos": used,
         "extra_repos_quantity": extra,
-        "next_bill_date": next_bill
+        "next_bill_date": next_bill,
+        "billing_enabled": True
     }
 
 @router.post("/redeem")

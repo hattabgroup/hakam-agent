@@ -23,18 +23,18 @@ class EntitlementsService:
             self.business_yearly: 30
         }
 
+    def is_billing_enabled(self) -> bool:
+        return os.getenv("BILLING_ENABLED", "false").lower() in ("true", "1", "yes")
+
     def get_repo_limit(self, subscription: models.Subscription) -> int:
+        # If billing is disabled (Community / Open-Source edition), allow unlimited repositories
+        if not self.is_billing_enabled():
+            return 999999
+
         if not subscription or subscription.status not in ["active", "trialing"]:
             return 0
         
         base = self.limits.get(subscription.plan_price_id, 0)
-        # Fallback if price doesn't match known ones (e.g. daily/yearly variants not mapped yet)
-        if base == 0:
-             # Try simple heuristic or default to Starter if unknown but active?
-             # For now, 0 or logged warning. Let's default to 0 to be safe, or 3 (free/starter) if we want to be generous.
-             # Better to be strict.
-             pass
-
         return base + (subscription.extra_repos_quantity or 0)
 
 entitlements_service = EntitlementsService()

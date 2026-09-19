@@ -117,6 +117,40 @@ export default function BillingPage() {
         );
     }
 
+    const isBillingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true';
+
+    if (!isBillingEnabled) {
+        return (
+            <div className="px-10 py-10 max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-3xl mb-6 shadow-xl shadow-indigo-500/10">
+                    🛡️
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-3">Community Edition</h1>
+                <p className="text-zinc-400 max-w-md mb-8 leading-relaxed">
+                    You are running the open-source self-hosted edition of Hakam. All capabilities, policies, and repository quotas are 100% unlocked with zero limits.
+                </p>
+                <div className="p-6 rounded-2xl glass border border-white/10 max-w-lg w-full text-left space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-zinc-400">Edition</span>
+                        <span className="text-white font-semibold">Community / Self-Hosted</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-zinc-400">License</span>
+                        <span className="text-white font-semibold">Apache 2.0 (Open Source)</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-zinc-400">Repository Quota</span>
+                        <span className="text-emerald-400 font-semibold">Unlimited</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-zinc-400">Advanced Reporting</span>
+                        <span className="text-emerald-400 font-semibold">Full Access</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const isActive = subscription && ['active', 'trialing'].includes(subscription.status);
 
     return (
