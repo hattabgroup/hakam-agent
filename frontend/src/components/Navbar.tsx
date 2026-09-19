@@ -33,7 +33,11 @@ export default function Navbar() {
                         <>
                             <Link href="#" className="hover:text-white transition-colors">Home</Link>
                             <Link href="#features" className="hover:text-white transition-colors">Features</Link>
-                            <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+                            {process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true' ? (
+                                <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+                            ) : (
+                                <Link href="#community" className="hover:text-white transition-colors">Community</Link>
+                            )}
                             <Link href="#ready" className="hover:text-white transition-colors">Ready?</Link>
                         </>
                     )}
@@ -49,7 +53,9 @@ export default function Navbar() {
                         <div className="flex items-center gap-4">
                             <div className="hidden sm:flex flex-col items-end">
                                 <span className="text-xs font-bold text-white leading-none">{user.email.split('@')[0]}</span>
-                                <span className="text-[10px] text-zinc-500">Free Plan</span>
+                                <span className="text-[10px] text-zinc-500 font-medium">
+                                    {process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true' ? 'Free Plan' : 'Community Edition'}
+                                </span>
                             </div>
                             <button onClick={logout} className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">Logout</button>
                             <Link href="/dashboard" className="btn-premium px-6 py-2.5 text-sm hidden sm:block">Go to App</Link>

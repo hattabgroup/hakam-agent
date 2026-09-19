@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Footer from "@/components/Footer";
 
+const isBillingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true';
+
 export default function Home() {
     return (
         <main className="relative pt-20 overflow-hidden">
@@ -23,7 +25,9 @@ export default function Home() {
                         Hakam isn't just a bot—it's an autonomous <strong>AI Agent</strong> that proactively reviews pull requests, enforces your custom policies, and teaches your team best practices.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                        <Link href="/signup" className="btn-premium w-64 lg:w-fit">Start Free Trial</Link>
+                        <Link href="/signup" className="btn-premium w-64 lg:w-fit">
+                            {isBillingEnabled ? 'Start Free Trial' : 'Get Started Free'}
+                        </Link>
                         <Link href="#features" className="btn-outline w-64 lg:w-fit">See How It Works</Link>
                     </div>
                     <div className="mt-12 flex items-center gap-8 opacity-70">
@@ -114,7 +118,7 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[
                             { title: "Automated Analysis", desc: "Instantly detect logic errors, memory leaks, and performance bottlenecks using context-aware AI.", icon: "🤖" },
-                            { title: "Custom Policies", desc: "Enforce your specific coding standards (up to unlimited rules on Business plan).", icon: "📜" },
+                            { title: "Custom Policies", desc: "Enforce your specific coding standards with custom automated AI review rules.", icon: "📜" },
                             { title: "VCS Integration", desc: "Native support for GitHub, GitLab, and Bitbucket. Setup takes less than 60 seconds.", icon: "🔌" },
                             { title: "Security Scans", desc: "Automatically identify leaked secrets, SQL injection, and vulnerable dependencies.", icon: "🛡️" },
                             { title: "Team Improvements", desc: "Unlock collaborative insights and velocity metrics designed to make your team faster.", icon: "🚀" },
@@ -130,68 +134,119 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* PRICING SECTION */}
-            <section id="pricing" className="py-32 container mx-auto px-6">
-                <div className="text-center mb-20">
-                    <h2 className="text-3xl sm:text-5xl font-bold mb-6 tracking-tight">Simple Pricing for <span className="text-gradient">Every Team.</span></h2>
-                    <p className="text-[var(--fg-muted)] max-w-2xl mx-auto text-lg">All plans include a 7-day free trial. Cancel anytime.</p>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                    {[
-                        {
-                            name: "Starter",
-                            price: "29",
-                            repos: "3 Repositories",
-                            features: ["Basic Reports", "Community Support", "Standard Policies"],
-                            active: false
-                        },
-                        {
-                            name: "Team",
-                            price: "79",
-                            repos: "10 Repositories",
-                            features: ["Advanced Reports", "Custom Policies 5x", "Team Improvements", "Priority Support"],
-                            active: true
-                        },
-                        {
-                            name: "Business",
-                            price: "149",
-                            repos: "30 Repositories",
-                            features: ["Advanced Reports", "Unlimited Custom Policies", "Team Improvements", "Dedicated Support"],
-                            active: false
-                        },
-                    ].map((plan, i) => (
-                        <div key={i} className={`p-10 rounded-[32px] border ${plan.active ? 'border-indigo-500 bg-indigo-500/5 ring-4 ring-indigo-500/10 scale-105 z-10' : 'border-[var(--border)] bg-transparent'} flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden`}>
-                            {plan.active && <div className="absolute top-0 right-0 bg-indigo-500 text-white px-6 py-1 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl">Most Popular</div>}
+            {/* PRICING OR COMMUNITY EDITION SECTION */}
+            {isBillingEnabled ? (
+                <section id="pricing" className="py-32 container mx-auto px-6">
+                    <div className="text-center mb-20">
+                        <h2 className="text-3xl sm:text-5xl font-bold mb-6 tracking-tight">Simple Pricing for <span className="text-gradient">Every Team.</span></h2>
+                        <p className="text-[var(--fg-muted)] max-w-2xl mx-auto text-lg">All plans include a 7-day free trial. Cancel anytime.</p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        {[
+                            {
+                                name: "Starter",
+                                price: "29",
+                                repos: "3 Repositories",
+                                features: ["Basic Reports", "Community Support", "Standard Policies"],
+                                active: false
+                            },
+                            {
+                                name: "Team",
+                                price: "79",
+                                repos: "10 Repositories",
+                                features: ["Advanced Reports", "Custom Policies 5x", "Team Improvements", "Priority Support"],
+                                active: true
+                            },
+                            {
+                                name: "Business",
+                                price: "149",
+                                repos: "30 Repositories",
+                                features: ["Advanced Reports", "Unlimited Custom Policies", "Team Improvements", "Dedicated Support"],
+                                active: false
+                            },
+                        ].map((plan, i) => (
+                            <div key={i} className={`p-10 rounded-[32px] border ${plan.active ? 'border-indigo-500 bg-indigo-500/5 ring-4 ring-indigo-500/10 scale-105 z-10' : 'border-[var(--border)] bg-transparent'} flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden`}>
+                                {plan.active && <div className="absolute top-0 right-0 bg-indigo-500 text-white px-6 py-1 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl">Most Popular</div>}
 
-                            <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-zinc-400">{plan.name}</h3>
-                            <div className="flex items-baseline gap-1 mb-2 pt-4">
-                                <span className="text-4xl font-black italic">$</span>
-                                <span className="text-7xl font-black tracking-tighter italic">{plan.price}</span>
-                                <span className="text-[var(--fg-muted)] text-sm">/mo</span>
-                            </div>
-                            <div className="mb-8 flex flex-col items-center gap-2">
-                                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wide border border-emerald-500/20">7-Day Free Trial</span>
-                            </div>
+                                <h3 className="text-xl font-bold mb-2 uppercase tracking-widest text-zinc-400">{plan.name}</h3>
+                                <div className="flex items-baseline gap-1 mb-2 pt-4">
+                                    <span className="text-4xl font-black italic">$</span>
+                                    <span className="text-7xl font-black tracking-tighter italic">{plan.price}</span>
+                                    <span className="text-[var(--fg-muted)] text-sm">/mo</span>
+                                </div>
+                                <div className="mb-8 flex flex-col items-center gap-2">
+                                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wide border border-emerald-500/20">7-Day Free Trial</span>
+                                </div>
 
-                            <ul className="flex flex-col gap-6 mb-12 w-full text-sm">
-                                <li className="flex items-center gap-3 text-white font-bold text-base justify-center">
-                                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                    {plan.repos}
-                                </li>
-                                {plan.features.map((f, j) => (
-                                    <li key={j} className="flex items-center gap-3 text-zinc-300">
-                                        <svg className={`w-5 h-5 ${plan.active ? 'text-indigo-400' : 'text-zinc-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                        {f}
+                                <ul className="flex flex-col gap-6 mb-12 w-full text-sm">
+                                    <li className="flex items-center gap-3 text-white font-bold text-base justify-center">
+                                        <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                        {plan.repos}
                                     </li>
-                                ))}
-                            </ul>
-                            <Link href="/signup" className={`w-full py-4 rounded-full font-bold transition-all ${plan.active ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/30' : 'border border-zinc-700 hover:bg-white/5'}`}>
-                                Start Free Trial
-                            </Link>
+                                    {plan.features.map((f, j) => (
+                                        <li key={j} className="flex items-center gap-3 text-zinc-300">
+                                            <svg className={`w-5 h-5 ${plan.active ? 'text-indigo-400' : 'text-zinc-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                            {f}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Link href="/signup" className={`w-full py-4 rounded-full font-bold transition-all ${plan.active ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/30' : 'border border-zinc-700 hover:bg-white/5'}`}>
+                                    Start Free Trial
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            ) : (
+                <section id="community" className="py-32 container mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-bold uppercase tracking-widest mb-6">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                            100% Free &amp; Open Source
                         </div>
-                    ))}
-                </div>
-            </section>
+                        <h2 className="text-3xl sm:text-5xl font-bold mb-6 tracking-tight">Community <span className="text-gradient">Edition.</span></h2>
+                        <p className="text-[var(--fg-muted)] max-w-2xl mx-auto text-lg leading-relaxed">
+                            Full code review intelligence, custom policies, and unlimited repository quotas. Free forever under the Apache 2.0 license.
+                        </p>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto glass rounded-[36px] p-10 sm:p-14 border border-white/10 relative overflow-hidden shadow-2xl">
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                            {[
+                                { title: "Unlimited Repositories", desc: "Connect as many GitHub or GitLab repositories as your team needs with zero seat limits.", icon: "📦" },
+                                { title: "Custom Policies", desc: "Define architectural and code quality policies with autonomous AI enforcement.", icon: "🛡️" },
+                                { title: "100% Data Sovereignty", desc: "Self-host on your own infrastructure with Docker. Your source code never leaves your VPC.", icon: "🔒" },
+                                { title: "Apache 2.0 Licensed", desc: "Permissive open-source license for commercial and personal use with zero vendor lock-in.", icon: "📜" },
+                            ].map((item, idx) => (
+                                <div key={idx} className="flex gap-4 items-start">
+                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shrink-0">
+                                        {item.icon}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-white mb-1">{item.title}</h3>
+                                        <p className="text-sm text-zinc-400 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold block">Edition Quota</span>
+                                <span className="text-lg font-black text-emerald-400">Unlimited / Free Forever</span>
+                            </div>
+                            <div className="flex gap-4">
+                                <a href="https://github.com/hattabgroup/hakam-agent" target="_blank" rel="noreferrer" className="btn-outline px-6 py-3 text-sm">
+                                    Star on GitHub
+                                </a>
+                                <Link href="/signup" className="btn-premium px-8 py-3 text-sm font-bold">
+                                    Get Started Free
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* CTA SECTION */}
             <section id="ready" className="container mx-auto px-6 py-32">

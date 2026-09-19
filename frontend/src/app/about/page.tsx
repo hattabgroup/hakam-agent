@@ -162,12 +162,15 @@ export default function AboutPage() {
                 <div className="max-w-3xl mx-auto">
                     <h2 className="text-3xl font-bold mb-8">Built by Engineers, for Engineers.</h2>
                     <p className="text-xl text-zinc-400 mb-12 leading-relaxed">
-                        Hakam is a product of <strong className="text-white">Hattab Group</strong>. We adhere to a &quot;Build it or Kill it&quot; philosophy.
-                        We got tired of reviewing the same basic errors in every PR, so we built an agent to do it for us.
-                        Now, we&apos;re sharing it with you.
+                        Hakam is an open-source platform created by <strong className="text-white">Hattab Group</strong> and built together with the global engineering community.
+                        We got tired of manually reviewing the same repetitive mistakes, security regressions, and architectural anti-patterns in pull requests, so we built Hakam to enforce standards automatically.
+                        Now, it is fully open-source and self-hostable under the Apache 2.0 license.
                     </p>
 
                     <div className="flex flex-wrap justify-center gap-4">
+                        <a href="https://github.com/hattabgroup/hakam-agent" target="_blank" rel="noreferrer" className="inline-flex h-12 items-center justify-center rounded-full bg-indigo-600 px-8 font-bold text-white transition-transform hover:scale-105 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30">
+                            View on GitHub
+                        </a>
                         <Link href="/signup" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 font-bold text-black transition-transform hover:scale-105 hover:bg-zinc-100">
                             Get Started
                         </Link>

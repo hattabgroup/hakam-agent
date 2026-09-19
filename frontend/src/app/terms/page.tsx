@@ -39,40 +39,40 @@ export default function TermsPage() {
                     </div>
 
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-4">4. Intellectual Property</h2>
+                        <h2 className="text-2xl font-bold text-white mb-4">4. Open Source & Intellectual Property</h2>
                         <p className="mb-4">
-                            The Service and its original content (excluding Content provided by users), features and functionality are and will remain the exclusive property of Hattab Group and its licensors.
+                            The Hakam software and its underlying platform are open-source and licensed under the <strong>Apache License, Version 2.0</strong>. You are free to inspect, modify, fork, and self-host the platform subject to the terms of the Apache 2.0 license.
                         </p>
                         <p>
-                            <strong>Your Code:</strong> You retain full ownership of all source code and intellectual property you submit to the Service for analysis. As stated in our Privacy Policy, we do not claim ownership of, store, or resell your code.
+                            <strong>Your Code:</strong> You retain full ownership of all source code, git repositories, diffs, and intellectual property analyzed by the Service. The Service does not claim ownership of, permanently store, train external public models on, or resell your source code.
                         </p>
                     </div>
 
                     <div>
                         <h2 className="text-2xl font-bold text-white mb-4">5. Termination</h2>
                         <p>
-                            We may terminate or suspend access to our Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.
+                            We may terminate or suspend access to any hosted instances of our Service immediately, without prior notice or liability, if you breach these Terms. Self-hosted instances remain governed by the open-source license.
                         </p>
                     </div>
 
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-4">6. Limitation of Liability</h2>
+                        <h2 className="text-2xl font-bold text-white mb-4">6. Disclaimer of Warranty & Limitation of Liability</h2>
                         <p>
-                            In no event shall Hattab Group, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any conduct or content of any third party on the Service.
+                            The software is provided &quot;AS IS&quot;, without warranty of any kind, express or implied. In no event shall the authors, contributors, or Hattab Group be liable for any claim, damages, or other liability arising from your use or inability to use the Service.
                         </p>
                     </div>
 
                     <div>
                         <h2 className="text-2xl font-bold text-white mb-4">7. Changes</h2>
                         <p>
-                            We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 30 days notice prior to any new terms taking effect.
+                            We reserve the right to modify these Terms at any time for any hosted offerings.
                         </p>
                     </div>
 
                     <div className="border-t border-white/10 pt-12">
                         <h2 className="text-2xl font-bold text-white mb-6">Contact Us</h2>
                         <p>
-                            If you have any questions about these Terms, please contact us at: <br />
+                            If you have any questions about these Terms, please reach out via our <a href="https://github.com/hattabgroup/hakam-agent" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors">GitHub repository</a> or email: <br />
                             <a href="mailto:info@hattabgroup.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">info@hattabgroup.com</a>
                         </p>
                     </div>

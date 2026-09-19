@@ -20,11 +20,11 @@ export default function PrivacyPage() {
                     {/* Introduction */}
                     <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm">
                         <p className="mb-4">
-                            At <strong>Hakam</strong> (a Hattab Group company), we take your privacy and security seriously.
-                            We understand that as an engineering tool, you are trusting us with your most valuable asset: your intellectual property.
+                            At <strong>Hakam</strong> (an open-source project by Hattab Group), we take your privacy and security seriously.
+                            Because Hakam is 100% open-source and self-hostable on your own servers or private VPC, you can maintain complete data sovereignty: your code, diffs, and developer metadata never leave your network.
                         </p>
                         <p>
-                            This Privacy Policy explains how we collect, use, and protect your information.
+                            This Privacy Policy explains how we collect, use, and protect your information when using hosted services or configuring the platform.
                         </p>
                     </div>
 
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
                     <div className="border-t border-white/10 pt-12">
                         <h2 className="text-2xl font-bold text-white mb-6">Contact Us</h2>
                         <p>
-                            If you have any questions about this Privacy Policy, please contact us at: <br />
+                            If you have questions about this policy or security matters, please reach out via our <a href="https://github.com/hattabgroup/hakam-agent" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors">GitHub repository</a> or email: <br />
                             <a href="mailto:info@hattabgroup.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">info@hattabgroup.com</a>
                         </p>
                     </div>

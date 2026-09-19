@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
+const isBillingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === 'true';
+
 const navItems = [
     {
         label: 'Dashboard', href: '/dashboard', icon: (
@@ -35,11 +37,11 @@ const navItems = [
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
         )
     },
-    {
+    ...(isBillingEnabled ? [{
         label: 'Billing', href: '/dashboard/billing', icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
         )
-    },
+    }] : []),
     {
         label: 'Settings', href: '/dashboard/settings', icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
@@ -50,6 +52,27 @@ const navItems = [
 export default function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
+    const [billingActive, setBillingActive] = React.useState(isBillingEnabled);
+
+    React.useEffect(() => {
+        if (isBillingEnabled) {
+            fetch('/api/billing/subscription')
+                .then(r => r.ok ? r.json() : null)
+                .then(sub => {
+                    if (sub && sub.billing_enabled === false) {
+                        setBillingActive(false);
+                    }
+                })
+                .catch(() => {});
+        }
+    }, []);
+
+    const visibleNavItems = navItems.filter(item => {
+        if (item.href === '/dashboard/billing') {
+            return billingActive;
+        }
+        return true;
+    });
 
     return (
         <aside className="fixed left-0 top-0 bottom-0 w-72 glass border-r border-white/5 flex flex-col z-40">
@@ -63,7 +86,7 @@ export default function Sidebar() {
 
             {/* Navigation Section */}
             <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto min-h-0">
-                {navItems.map((item) => {
+                {visibleNavItems.map((item) => {
                     const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
                     return (
                         <Link
@@ -94,7 +117,7 @@ export default function Sidebar() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-bold text-white truncate">{user.email.split('@')[0]}</p>
-                                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Free Plan</p>
+                                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{billingActive ? 'Free Plan' : 'Community Edition'}</p>
                             </div>
                         </div>
                         <button
