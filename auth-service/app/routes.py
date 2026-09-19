@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
@@ -6,6 +7,8 @@ from . import models, schemas, security, database
 from .services import email as email_service, recaptcha
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+EMAIL_VERIFICATION_REQUIRED = os.getenv("EMAIL_VERIFICATION_REQUIRED", "false").lower() in ("true", "1", "yes")
 
 @router.post("/signup", response_model=schemas.UserResponse)
 async def signup(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
@@ -17,21 +20,27 @@ async def signup(user: schemas.UserCreate, background_tasks: BackgroundTasks, db
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_password = security.get_password_hash(user.password)
-    verification_token = secrets.token_urlsafe(32)
+    verification_token = secrets.token_urlsafe(32) if EMAIL_VERIFICATION_REQUIRED else None
     
     new_user = models.User(
         email=user.email, 
         hashed_password=hashed_password,
-        is_verified=False,
+        is_verified=not EMAIL_VERIFICATION_REQUIRED,
         verification_token=verification_token,
-        last_verification_sent_at=datetime.now(timezone.utc)
+        last_verification_sent_at=datetime.now(timezone.utc) if EMAIL_VERIFICATION_REQUIRED else None
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
-    # Send verification email in background
-    background_tasks.add_task(email_service.send_verification_email, new_user.email, verification_token)
+    if EMAIL_VERIFICATION_REQUIRED and verification_token:
+        # Send verification email in background
+        background_tasks.add_task(email_service.send_verification_email, new_user.email, verification_token)
+        new_user.requires_verification = True
+        new_user.access_token = None
+    else:
+        new_user.requires_verification = False
+        new_user.access_token = security.create_access_token(data={"sub": str(new_user.id), "email": new_user.email})
     
     return new_user
 
@@ -47,7 +56,7 @@ async def login(user_credentials: schemas.UserLogin, db: Session = Depends(datab
     if not security.verify_password(user_credentials.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-    if not user.is_verified:
+    if EMAIL_VERIFICATION_REQUIRED and not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Account not verified. Please check your email."
@@ -66,7 +75,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     if not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-    if not user.is_verified:
+    if EMAIL_VERIFICATION_REQUIRED and not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Account not verified. Please check your email."

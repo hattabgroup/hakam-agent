@@ -2,25 +2,25 @@ import os
 import aiosmtplib
 from email.message import EmailMessage
 
-ZEPTOMAIL_SMTP_HOST = os.getenv("ZEPTOMAIL_SMTP_HOST", "smtp.zeptomail.com")
-ZEPTOMAIL_SMTP_PORT = int(os.getenv("ZEPTOMAIL_SMTP_PORT", 587))
-ZEPTOMAIL_USERNAME = os.getenv("ZEPTOMAIL_USERNAME")
-ZEPTOMAIL_PASSWORD = os.getenv("ZEPTOMAIL_PASSWORD")
-ZEPTOMAIL_FROM_EMAIL = os.getenv("ZEPTOMAIL_FROM_EMAIL")
+SMTP_HOST = os.getenv("SMTP_HOST") or os.getenv("ZEPTOMAIL_SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT") or os.getenv("ZEPTOMAIL_SMTP_PORT") or 587)
+SMTP_USERNAME = os.getenv("SMTP_USERNAME") or os.getenv("ZEPTOMAIL_USERNAME")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("ZEPTOMAIL_PASSWORD")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL") or os.getenv("ZEPTOMAIL_FROM_EMAIL") or "noreply@hakamlab.com"
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
 
 async def send_verification_email(to_email: str, token: str):
     """
-    Sends a verification email using ZeptoMail SMTP.
+    Sends a verification email using configured SMTP.
     """
-    if not ZEPTOMAIL_USERNAME or not ZEPTOMAIL_PASSWORD or not ZEPTOMAIL_FROM_EMAIL:
-        print("Warning: ZeptoMail credentials not set. Skipping email send.")
+    if not SMTP_HOST or not SMTP_USERNAME or not SMTP_PASSWORD:
+        print("Warning: SMTP credentials not set. Skipping verification email send.")
         return
 
     verification_link = f"{FRONTEND_BASE_URL}/verify-email?token={token}"
 
     message = EmailMessage()
-    message["From"] = f"Hakam <{ZEPTOMAIL_FROM_EMAIL}>"
+    message["From"] = f"Hakam <{SMTP_FROM_EMAIL}>"
     message["To"] = to_email
     message["Subject"] = "Verify your Hakam account"
     
@@ -40,37 +40,36 @@ async def send_verification_email(to_email: str, token: str):
     message.add_alternative(html_content, subtype="html")
 
     # Determine TLS settings based on port
-    use_tls = ZEPTOMAIL_SMTP_PORT == 465
-    start_tls = ZEPTOMAIL_SMTP_PORT != 465
+    use_tls = SMTP_PORT == 465
+    start_tls = SMTP_PORT != 465
 
     try:
         await aiosmtplib.send(
             message,
-            hostname=ZEPTOMAIL_SMTP_HOST,
-            port=ZEPTOMAIL_SMTP_PORT,
-            username=ZEPTOMAIL_USERNAME,
-            password=ZEPTOMAIL_PASSWORD,
+            hostname=SMTP_HOST,
+            port=SMTP_PORT,
+            username=SMTP_USERNAME,
+            password=SMTP_PASSWORD,
             use_tls=use_tls,
             start_tls=start_tls,
-            timeout=20 # Higher timeout for reliability
+            timeout=20
         )
         print(f"Verification email sent to {to_email}")
     except Exception as e:
         print(f"Failed to send email to {to_email}: {e}")
-        # In production, you might want to log this to a proper logging service or raise headers
 
 async def send_password_reset_email(to_email: str, token: str):
     """
-    Sends a password reset email using ZeptoMail SMTP.
+    Sends a password reset email using configured SMTP.
     """
-    if not ZEPTOMAIL_USERNAME or not ZEPTOMAIL_PASSWORD or not ZEPTOMAIL_FROM_EMAIL:
-        print("Warning: ZeptoMail credentials not set. Skipping email send.")
+    if not SMTP_HOST or not SMTP_USERNAME or not SMTP_PASSWORD:
+        print("Warning: SMTP credentials not set. Skipping password reset email send.")
         return
 
     reset_link = f"{FRONTEND_BASE_URL}/reset-password?token={token}"
 
     message = EmailMessage()
-    message["From"] = f"Hakam <{ZEPTOMAIL_FROM_EMAIL}>"
+    message["From"] = f"Hakam <{SMTP_FROM_EMAIL}>"
     message["To"] = to_email
     message["Subject"] = "Reset your Hakam password"
     
@@ -91,19 +90,19 @@ async def send_password_reset_email(to_email: str, token: str):
     message.add_alternative(html_content, subtype="html")
 
     # Determine TLS settings based on port
-    use_tls = ZEPTOMAIL_SMTP_PORT == 465
-    start_tls = ZEPTOMAIL_SMTP_PORT != 465
+    use_tls = SMTP_PORT == 465
+    start_tls = SMTP_PORT != 465
 
     try:
         await aiosmtplib.send(
             message,
-            hostname=ZEPTOMAIL_SMTP_HOST,
-            port=ZEPTOMAIL_SMTP_PORT,
-            username=ZEPTOMAIL_USERNAME,
-            password=ZEPTOMAIL_PASSWORD,
+            hostname=SMTP_HOST,
+            port=SMTP_PORT,
+            username=SMTP_USERNAME,
+            password=SMTP_PASSWORD,
             use_tls=use_tls,
             start_tls=start_tls,
-            timeout=20 # Higher timeout for reliability
+            timeout=20
         )
         print(f"Password reset email sent to {to_email}")
     except Exception as e:

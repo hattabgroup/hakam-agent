@@ -3,6 +3,7 @@ import httpx
 from fastapi import HTTPException, status
 
 RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
+RECAPTCHA_ENABLED = os.getenv("RECAPTCHA_ENABLED", "true").lower() in ("true", "1", "yes")
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 
 async def verify_recaptcha(token: str):
@@ -10,10 +11,8 @@ async def verify_recaptcha(token: str):
     Verifies the reCAPTCHA token with Google's API.
     Raises HTTPException if verification fails.
     """
-    if not RECAPTCHA_SECRET_KEY:
-        # If no key is configured, skip verification (or log warning)
-        # For security, you might want to fail if key is missing in prod, 
-        # but for dev/flexibility we'll skip.
+    if not RECAPTCHA_ENABLED or not RECAPTCHA_SECRET_KEY:
+        # If disabled or no key is configured, skip verification
         return True
 
     if not token:

@@ -13,7 +13,7 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
-    signup: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
+    signup: (email: string, password: string, recaptchaToken?: string) => Promise<{ requires_verification: boolean }>;
     logout: () => Promise<void>;
 }
 
@@ -78,8 +78,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signup = async (email: string, password: string, recaptchaToken?: string) => {
         try {
-            await axios.post("/api/auth/signup", { email, password, recaptcha_token: recaptchaToken });
-            // await login(email, password); // Logic changed: Email verification required
+            const res = await axios.post("/api/auth/signup", { email, password, recaptcha_token: recaptchaToken });
+            const requiresVerification = res.data?.requires_verification ?? false;
+            if (!requiresVerification) {
+                await fetchUser();
+                router.push("/dashboard");
+                return { requires_verification: false };
+            }
+            return { requires_verification: true };
         } catch (error: any) {
             throw new Error(error.response?.data?.detail || "Signup failed");
         }

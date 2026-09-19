@@ -17,6 +17,9 @@ class Token(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: EmailStr
+    is_verified: bool = True
+    requires_verification: bool = False
+    access_token: str | None = None
 
     class Config:
         from_attributes = True

@@ -41,8 +41,10 @@ export default function SignupPage() {
                 setRecaptchaToken(token);
             }
 
-            await signup(email, password, token || undefined);
-            router.push("/verify-email-instruction");
+            const res = await signup(email, password, token || undefined);
+            if (res?.requires_verification) {
+                router.push("/verify-email-instruction");
+            }
         } catch (err: any) {
             recaptchaRef.current?.reset();
             setRecaptchaToken(null);
